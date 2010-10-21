@@ -1,26 +1,23 @@
 require "dkbrpc/connection_id"
 require "dkbrpc/fast_message_protocol"
 require "dkbrpc/remote_call"
+require 'dkbrpc/outgoing_connection'
+require 'dkbrpc/incoming_connection'
+
 
 module Dkbrpc
 
   module IncommingHandler
-    attr_accessor :id, :on_connection
-
-    def post_init
-
-    end
+    include Dkbrpc::FastMessageProtocol
+    include Dkbrpc::IncomingConnection
+    attr_accessor :id, :on_connection, :api
 
     def connection_completed
       send_data("5")
       send_data(@id)
       @on_connection.call if @on_connection
     end
-
-    def receive_data data
-
-    end
-
+    
     def unbind
 
     end
@@ -29,8 +26,8 @@ module Dkbrpc
 
   module OutgoingHandler
     include ConnectionId
-    include RemoteCall
-    attr_accessor :host, :port, :on_connection
+    include OutgoingConnection
+    attr_accessor :host, :port, :on_connection, :api
 
     def post_init
       @buffer = ""
@@ -47,17 +44,9 @@ module Dkbrpc
       end
     end
 
-    def receive_message(message)      
-      @callback.call(*unmarshal_call(message))
-    end
 
     def unbind
 
-    end
-
-    def remote_call(method, * args, &block)
-      @callback = block
-      send_message(marshal_call(method, *args))
     end
 
     private
@@ -69,6 +58,7 @@ module Dkbrpc
           @id = extract_id(buffer)
           handler.id = @id
           handler.on_connection = @on_connection
+          handler.api = @api
         end
         Dkbrpc::FastMessageProtocol.install(self)
       end
@@ -89,6 +79,7 @@ module Dkbrpc
           handler.host = @host
           handler.port = @port
           handler.on_connection = block
+          handler.api = @api
         end
       end
     end

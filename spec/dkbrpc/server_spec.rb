@@ -4,10 +4,10 @@ require 'dkbrpc/server'
 require "dkbrpc/remote_call"
 
 describe Dkbrpc::Listener do
-  include Dkbrpc::Listener
   include Dkbrpc::RemoteCall
 
   before(:each) do
+    self.extend(Dkbrpc::Listener)
     @sent_data = ""
     self.stub!(:send_data) do |data|
       @sent_data = data
@@ -30,16 +30,16 @@ describe Dkbrpc::Listener do
     Dkbrpc::RemoteClient.find("00000005").outgoing.should_not be_nil
   end
 
-  class TestApi
-    attr_accessor :dodo
-    def amethod(responder, dodo)
-      @dodo = dodo
-    end
-  end
-
-  it "should receive message " do
-    @api = TestApi.new
-    receive_message(marshal_call(:amethod, "goo"))
-    @api.dodo.should == "goo"  
-  end
+#  class TestApi
+#    attr_accessor :dodo
+#    def amethod(responder, dodo)
+#      @dodo = dodo
+#    end
+#  end
+#
+#  it "should receive message " do
+#    @api = TestApi.new
+#    receive_message(marshal_call(:amethod, "goo"))
+#    @api.dodo.should == "goo"
+#  end
 end

@@ -1,7 +1,9 @@
 require 'eventmachine'
 require 'dkbrpc/connection_id'
 require "dkbrpc/fast_message_protocol"
-require 'dkbrpc/remote_call'
+require 'dkbrpc/outgoing_connection'
+require 'dkbrpc/incoming_connection'
+
 module Dkbrpc
 
   class Id
@@ -37,8 +39,8 @@ module Dkbrpc
 
   module Listener
     attr_accessor :api
+    attr_accessor :new_connection_callback
     include ConnectionId
-    include RemoteCall
 
     def post_init
       @buffer = ""
@@ -52,22 +54,13 @@ module Dkbrpc
 
     end
 
-    def receive_message msg
-      method, args = unmarshal_call(msg)
-      api.send(method, *[self, *args]);
-    end
-
-    def reply(*args)
-      send_message(marshal_call(args))
-    end
-
     def unbind
 
     end
 
     private
 
-    def handle_incomming
+    def handle_incoming
       @id = Id.next
       send_data(@id)
       RemoteClient.add_incomming(@id, self)
@@ -77,15 +70,19 @@ module Dkbrpc
       if complete_id?(buffer[1..-1])
         @id = extract_id(buffer[1..-1])
         RemoteClient.add_outgoing(@id, self)
+        self.extend(OutgoingConnection)
+        switch_protocol        
       end
     end
 
     def handshake(buffer)
       if buffer[0] == "4"[0]
-        handle_incomming
+        handle_incoming
+        self.extend(IncomingConnection)
         switch_protocol
       elsif buffer[0] == "5"[0]
         handle_outgoing(buffer)
+        @new_connection_callback.call(ClientProxy.new(self)) if @new_connection_callback
       end
     end
 
@@ -93,6 +90,18 @@ module Dkbrpc
       Dkbrpc::FastMessageProtocol.install(self)
     end
 
+  end
+
+  class ClientProxy
+    def initialize(outgoing_connection)
+      @remote_connection = outgoing_connection
+    end
+
+    def method_missing(method, * args, & block)
+      EventMachine::schedule do
+        @remote_connection.remote_call(method, args, &block)
+      end
+    end
   end
 
 
@@ -103,10 +112,11 @@ module Dkbrpc
       @api = api
     end
 
-    def start
+    def start & block
       EventMachine::schedule do
         EventMachine::start_server(@host, @port, Listener) do |server|
           server.api = @api
+          server.new_connection_callback = block
         end
       end
 

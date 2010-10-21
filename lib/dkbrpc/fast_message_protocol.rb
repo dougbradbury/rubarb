@@ -14,7 +14,6 @@ module Dkbrpc
       # else - accumulating data.
       @fmp_size_chunk = "" # we store a part of size chunk here
       @fmp_data = ""
-      super
     end
 
     LENGTH_FORMAT = "N".freeze

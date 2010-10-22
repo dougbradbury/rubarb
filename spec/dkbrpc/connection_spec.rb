@@ -57,16 +57,11 @@ describe Dkbrpc::IncommingHandler do
   end
 
   it "should call back when finished" do
-    pending("does not work") do
-      callback = false
-      @on_connection = Proc.new {callback = true}
-      @id = "00000001"
-      
-      connection_completed
-      callback.should == false
-      
-      receive_data "00000001"
-      callback.should == true
-    end
+    callback = false
+    @on_connection = Proc.new {callback = true}
+    @id = "00000001"
+    
+    connection_completed
+    callback.should == true
   end
 end

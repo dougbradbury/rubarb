@@ -62,7 +62,6 @@ describe "Connection Failures" do
 
     wait_for{@connected}
 
-    puts "stopping connection"
     @server.stop
 
     wait_for{@errback_called}

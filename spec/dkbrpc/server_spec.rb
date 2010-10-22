@@ -22,12 +22,10 @@ describe Dkbrpc::Listener do
   end
 
   it "should receive another connection" do
-    pending("does not work") do
-      receive_data("5")
-      receive_data("00000005")
-      @sent_data.should == "00000005"
-      @id.should == "00000005"
-    end
+    receive_data("5")
+    receive_data("00000005")
+    @sent_data.should == ""
+    @id.should == "00000005"
   end
 
 end

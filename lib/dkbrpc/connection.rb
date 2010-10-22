@@ -52,7 +52,7 @@ module Dkbrpc
 
     def unbind
       if @incoming_connection
-        @incoming_connection.close_connection
+        EM.next_tick { @incoming_connection.close_connection }
       else
         @errback.call("Connection Failure") if @errback
       end

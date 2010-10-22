@@ -14,7 +14,6 @@ end
 EM.run do
   server = Dkbrpc::Server.new("127.0.0.1", 9441, ServerApi.new)
 
-
   connections = {}
 
   server.start do |client|
@@ -27,7 +26,6 @@ EM.run do
       end
 
     end
-
 
   end
 

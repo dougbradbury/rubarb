@@ -21,13 +21,11 @@ def stop_reactor(reactor)
 end
 
 def wait_for
-
   Timeout::timeout(5) do
     while !yield
       Thread.pass
     end
   end
-
 end
 
 #$DEBUG = true

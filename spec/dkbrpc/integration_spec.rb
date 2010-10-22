@@ -7,7 +7,6 @@ describe "Server to Client communication and response" do
 
   class TestClientApi
     def name(responder)
-      puts "Name has been called"
       responder.reply("Doug")
     end
   end
@@ -29,7 +28,6 @@ describe "Server to Client communication and response" do
     @callback_called = false
 
     @server.start do |new_client|
-      puts "new client : #{new_client}"
       new_client.name do|result|
         result.should == "Doug"
         @callback_called = true

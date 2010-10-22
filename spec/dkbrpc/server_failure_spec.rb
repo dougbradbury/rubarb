@@ -4,13 +4,6 @@ require 'dkbrpc/connection'
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 describe "Server Failures" do
-  before(:each) do
-#    @reactor = start_reactor
-  end
-
-  after(:each) do
-#    stop_reactor(@reactor)
-  end
 
   it "should handle the loss of a client" do
     EM.run do
@@ -26,7 +19,6 @@ describe "Server Failures" do
           @connection.stop
         end
         client.errback do
-          puts "errback"
           @cons -= 1
           if @cons == 1
             EM.stop
@@ -38,7 +30,6 @@ describe "Server Failures" do
       @connection2.start
 
       wait_for_connections(2, 10) do
-        puts "stopping connection"
         @connection.stop
         wait_for_connections(1, 10) do
           @cons.should == 1
@@ -51,7 +42,6 @@ describe "Server Failures" do
   end
 
   def wait_for_connections(n, ttl, &block)
-    puts "waiting #{n} , TTL:  #{ttl}"
     if ttl <= 0
       fail("TTL expired")
     end

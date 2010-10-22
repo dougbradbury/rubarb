@@ -15,9 +15,9 @@ describe Dkbrpc::OutgoingHandler do
     post_init
   end
   
-  it "should send type on start" do    
+  it "should send type on start" do
     connection_completed
-    @sent_data.should == "4"    
+    @sent_data.should == "4"
   end
 
   it "should open an outgoing connection with connection id" do
@@ -63,6 +63,5 @@ describe Dkbrpc::IncommingHandler do
     
     connection_completed
     callback.should == true
-
   end
 end

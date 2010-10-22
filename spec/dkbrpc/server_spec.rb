@@ -24,7 +24,7 @@ describe Dkbrpc::Listener do
   it "should receive another connection" do
     receive_data("5")
     receive_data("00000005")
-    @sent_data.should == "00000005"
+    @sent_data.should == ""
     @id.should == "00000005"
   end
 

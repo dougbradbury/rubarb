@@ -50,15 +50,16 @@ describe "Server Failures" do
 
   end
 
-  def wait_for_connections(n, ttl, & block)
-
+  def wait_for_connections(n, ttl, &block)
     puts "waiting #{n} , TTL:  #{ttl}"
     if ttl <= 0
       fail("TTL expired")
     end
 
     if @cons != n
-      EventMachine.add_periodic_timer(0.1) { wait_for_connections(n, ttl -1, & block) }
+      EventMachine.add_periodic_timer(0.1) do
+        wait_for_connections(n, ttl -1, &block )
+      end
     else
       yield
     end

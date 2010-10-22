@@ -62,9 +62,6 @@ describe Dkbrpc::IncommingHandler do
     @id = "00000001"
     
     connection_completed
-    callback.should == false
-
-    receive_data "00000001"
     callback.should == true
 
   end

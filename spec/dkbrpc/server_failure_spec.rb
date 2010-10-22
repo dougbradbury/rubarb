@@ -1,5 +1,6 @@
 require 'dkbrpc/server'
 require 'dkbrpc/connection'
+require 'socket'
 
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
@@ -39,6 +40,20 @@ describe "Server Failures" do
 
     end
 
+  end
+
+  it "should call errorback when port is already in use" do
+    in_the_way = TCPServer.open(9441)
+    @errback_called = false
+    EM.run do
+      @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+      @server.errback do
+        @errback_called = true
+      end
+      @server.start
+    end
+
+    wait_for{@errback_called}
   end
 
   def wait_for_connections(n, ttl, &block)

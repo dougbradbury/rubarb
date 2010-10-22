@@ -3,7 +3,6 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 require 'dkbrpc/server'
 require 'dkbrpc/connection'
 
-
 describe "Server to Client communication and response" do
 
   class TestClientApi
@@ -30,6 +29,7 @@ describe "Server to Client communication and response" do
     @callback_called = false
 
     @server.start do |new_client|
+      puts "new client : #{new_client}"
       new_client.name do|result|
         result.should == "Doug"
         @callback_called = true
@@ -38,9 +38,7 @@ describe "Server to Client communication and response" do
 
     @connection.start
 
-    while (!@callback_called)
-      Thread.pass
-    end
+    wait_for {@callback_called}
 
   end
 
@@ -85,16 +83,15 @@ describe "Client to Server communication and response" do
   it "without parameters" do
     @callback_called = false
     @server.start
+
     @connection.start do
       @connection.hi do |response|
-        @callback_called = true
         response.should == "how are you?"
+        @callback_called = true
       end
     end
 
-    while (!@callback_called)
-      Thread.pass
-    end
+    wait_for {@callback_called}
   end
 
   it "with parameters" do
@@ -106,11 +103,7 @@ describe "Client to Server communication and response" do
         response.should == "how are you Doug?"
       end
     end
-
-    while (!@callback_called)
-      Thread.pass
-    end
-
+    wait_for {@callback_called}
   end
 
   it "with complex response" do
@@ -123,10 +116,7 @@ describe "Client to Server communication and response" do
       end
     end
 
-    while (!@callback_called)
-      Thread.pass
-    end
-
+    wait_for {@callback_called}
   end
 
 end

@@ -27,6 +27,7 @@ module Dkbrpc
     end
 
     def receive_data(next_chunk)
+      log {"fmp rx:  #{next_chunk}"}
       while true # helps fight deep recursion when receiving many messages in a single buffer.
         data = next_chunk
         # accumulate data

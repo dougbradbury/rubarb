@@ -8,18 +8,23 @@ require 'dkbrpc/incoming_connection'
 module Dkbrpc
 
   module IncommingHandler
-    include Dkbrpc::FastMessageProtocol
     include Dkbrpc::IncomingConnection
-    attr_accessor :id, :on_connection, :api
+    attr_accessor :id, :on_connection, :api, :errback
 
+    def post_init
+      @buffer = ""
+
+    end
+    
     def connection_completed
+      Dkbrpc::FastMessageProtocol.install(self)
       send_data("5")
       send_data(@id)
       @on_connection.call if @on_connection
     end
-    
-    def unbind
 
+    def unbind
+      @errback.call("Connection Failure") if @errback
     end
   end
 
@@ -27,7 +32,7 @@ module Dkbrpc
   module OutgoingHandler
     include ConnectionId
     include OutgoingConnection
-    attr_accessor :host, :port, :on_connection, :api
+    attr_accessor :host, :port, :on_connection, :api, :errback
 
     def post_init
       @buffer = ""
@@ -46,7 +51,11 @@ module Dkbrpc
 
 
     def unbind
-
+      if @incoming_connection
+        @incoming_connection.close_connection
+      else
+        @errback.call("Connection Failure") if @errback
+      end
     end
 
     private
@@ -54,13 +63,15 @@ module Dkbrpc
 
     def handshake(buffer)
       if complete_id?(buffer)
-        EventMachine::connect(@host, @port, IncommingHandler) do |handler|
-          @id = extract_id(buffer)
-          handler.id = @id
-          handler.on_connection = @on_connection
-          handler.api = @api
-        end
         Dkbrpc::FastMessageProtocol.install(self)
+        EventMachine::connect(@host, @port, IncommingHandler) do |incoming_connection|
+          @id = extract_id(buffer)
+          incoming_connection.id = @id
+          incoming_connection.on_connection = @on_connection
+          incoming_connection.api = @api
+          incoming_connection.errback = @errback
+          @incoming_connection = incoming_connection
+        end
       end
     end
   end
@@ -72,7 +83,11 @@ module Dkbrpc
       @api = api
     end
 
-    def start &block
+    def errback & block
+      @errback = block
+    end
+
+    def start & block
       EventMachine::schedule do
         EventMachine::connect(@host, @port, OutgoingHandler) do |handler|
           @remote_connection = handler
@@ -80,13 +95,20 @@ module Dkbrpc
           handler.port = @port
           handler.on_connection = block
           handler.api = @api
+          handler.errback = @errback
         end
       end
     end
 
-    def method_missing(method, * args, &block)
-      EventMachine::schedule do        
-        @remote_connection.remote_call(method, args, &block)
+    def method_missing(method, * args, & block)
+      EventMachine::schedule do
+        @remote_connection.remote_call(method, args, & block)
+      end
+    end
+
+    def stop
+      EventMachine::schedule do
+        @remote_connection.close_connection
       end
     end
 

@@ -4,7 +4,7 @@ module Dkbrpc
   module OutgoingConnection
     include RemoteCall
     def receive_message(message)
-      @callback.call(* unmarshal_call(message))
+      @callback.call(* unmarshal_call(message)) if @callback
     end
 
     def remote_call(method, * args, & block)

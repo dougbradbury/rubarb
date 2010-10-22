@@ -19,27 +19,13 @@ describe Dkbrpc::Listener do
     Dkbrpc::Id.stub(:next).and_return("00000001")
     receive_data("4")
     @sent_data.should == "00000001"
-    Dkbrpc::RemoteClient.find("00000001").incomming.should_not be_nil
   end
 
   it "should receive another connection" do
     receive_data("5")
     receive_data("00000005")
-    @sent_data.should == ""
+    @sent_data.should == "00000005"
     @id.should == "00000005"
-    Dkbrpc::RemoteClient.find("00000005").outgoing.should_not be_nil
   end
 
-#  class TestApi
-#    attr_accessor :dodo
-#    def amethod(responder, dodo)
-#      @dodo = dodo
-#    end
-#  end
-#
-#  it "should receive message " do
-#    @api = TestApi.new
-#    receive_message(marshal_call(:amethod, "goo"))
-#    @api.dodo.should == "goo"
-#  end
 end

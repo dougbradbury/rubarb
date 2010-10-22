@@ -1,3 +1,5 @@
+require "dkbrpc/remote_call"
+
 module Dkbrpc
 
   module IncomingConnection

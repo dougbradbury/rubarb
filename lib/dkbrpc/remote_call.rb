@@ -5,7 +5,7 @@ module Dkbrpc
     end
 
     def unmarshal_call(data)
-      return * Marshal::load(data)
+      return *Marshal::load(data)
     end
 
   end

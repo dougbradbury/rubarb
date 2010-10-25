@@ -12,7 +12,6 @@ describe "Server Failures" do
       @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
       @connection2 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
 
-
       @cons = 0
       @server.start do |client|
         @cons += 1
@@ -37,9 +36,7 @@ describe "Server Failures" do
           EM.stop
         end
       end
-
     end
-
   end
   
   it "should call errorback when port is already in use" do
@@ -68,6 +65,27 @@ describe "Server Failures" do
     @errback_called.should be_true
     @err_message.should == "no acceptor"
   end
+
+#  it "handles no method calls" do
+#    thread = Thread.new do
+#      begin
+#        EM.run do
+#          @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+#          EventMachine::Connection
+#          @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+#          @server.start
+#          @connection.start do
+#            @connection.not_a_method(nil)
+#          end
+#        end
+#      rescue Exception => e
+#        puts e.message
+#      end
+#    end
+#    wait_for{false}
+#    EM.stop
+#    thread.join
+#  end
 
   def wait_for_connections(n, ttl, &block)
     if ttl <= 0

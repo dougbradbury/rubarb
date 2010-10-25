@@ -3,10 +3,9 @@ require "dkbrpc/fast_message_protocol"
 require "dkbrpc/remote_call"
 require 'dkbrpc/outgoing_connection'
 require 'dkbrpc/incoming_connection'
-
+require 'dkbrpc/connection_error'
 
 module Dkbrpc
-
   module IncommingHandler
     include Dkbrpc::IncomingConnection
     attr_accessor :id, :on_connection, :api, :errback
@@ -24,7 +23,11 @@ module Dkbrpc
     end
 
     def unbind
-      @errback.call("Connection Failure") if @errback
+    begin
+      @errback.call(ConnectionError.new) if @errback
+    rescue Exception => e
+      puts e.message
+      end
     end
   end
 
@@ -54,7 +57,11 @@ module Dkbrpc
       if @incoming_connection
         EM.next_tick { @incoming_connection.close_connection }
       else
-        @errback.call("Connection Failure") if @errback
+      begin
+        @errback.call(Dkbrpc::ConnectionError.new) if @errback
+      rescue Exception => e
+      puts e.message
+      end
       end
     end
 
@@ -83,19 +90,19 @@ module Dkbrpc
       @api = api
     end
 
-    def errback & block
+    def errback &block
       @errback = block
     end
 
-    def start & block
+    def start &block
       EventMachine::schedule do
-        EventMachine::connect(@host, @port, OutgoingHandler) do |handler|
-          @remote_connection = handler
-          handler.host = @host
-          handler.port = @port
-          handler.on_connection = block
-          handler.api = @api
-          handler.errback = @errback
+        EventMachine::connect(@host, @port, OutgoingHandler) do |connection|
+          @remote_connection = connection
+          connection.host = @host
+          connection.port = @port
+          connection.on_connection = block
+          connection.api = @api
+          connection.errback = @errback
         end
       end
     end

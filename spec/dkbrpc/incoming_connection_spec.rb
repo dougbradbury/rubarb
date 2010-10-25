@@ -14,11 +14,21 @@ describe Dkbrpc::IncomingConnection do
       @dodo = dodo
     end
   end
-  
-  it "should receive message " do
+
+  before(:each) do
     @api = TestApi.new
+  end
+
+  it "should receive message " do
     receive_message(marshal_call(:amethod, "goo"))
     @api.dodo.should == "goo"
   end
 
+  it "should receive reply with exception when a non-existent method is called" do
+    self.should_receive(:reply).with do |exception|
+      exception.message.include?("undefined method").should == true
+    end
+    receive_message(marshal_call(:not_a_method, "foo"))
+    @api.dodo.should_not == "foo"
+  end
 end

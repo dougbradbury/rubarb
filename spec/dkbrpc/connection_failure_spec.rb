@@ -19,7 +19,8 @@ describe "Connection Failures" do
     @errback_called = false
     @connection.errback do |error|
       @errback_called = true
-      error.should == "Connection Failure"
+      error.class.should == Dkbrpc::ConnectionError
+      error.message.should == "Connection Failure"
     end
 
     @callback_called = false
@@ -43,14 +44,16 @@ describe "Connection Failures" do
     @errback_called = false
     @connection.errback do |error|
       @errback_called = true
-      error.should == "Connection Failure"
+      error.class.should == Dkbrpc::ConnectionError
+      error.message.should == "Connection Failure"
     end
 
 
     @errback2_called = false
     @connection2.errback do |error|
       @errback2_called = true
-      error.should == "Connection Failure"
+      error.class.should == Dkbrpc::ConnectionError
+      error.message.should == "Connection Failure"
     end
 
     @connected = false

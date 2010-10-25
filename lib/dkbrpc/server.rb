@@ -23,9 +23,8 @@ module Dkbrpc
     end
   end
 
-
   class Server
-    
+
     def initialize(host, port, api)
       @host = host
       @port = port
@@ -39,6 +38,7 @@ module Dkbrpc
           @server_signature = EventMachine::start_server(@host, @port, Listener) do |connection|
             connection.api = @api
             connection.new_connection_callback = callback
+            connection.errback = @errback
             @connections << connection
           end
         rescue Exception => e
@@ -77,7 +77,7 @@ module Dkbrpc
     end
 
     def unbind
-      @errback.call if @errback
+      @errback.call(ConnectionError.new) if @errback
     end
 
     private

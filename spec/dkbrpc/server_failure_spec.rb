@@ -41,19 +41,32 @@ describe "Server Failures" do
     end
 
   end
-
+  
   it "should call errorback when port is already in use" do
-    in_the_way = TCPServer.open(9441)
     @errback_called = false
-    EM.run do
-      @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-      @server.errback do
-        @errback_called = true
+    
+    thread = Thread.new do
+      EM.run do
+        
+        @server = Dkbrpc::Server.new("127.0.0.1", 7778, mock("server"))
+        @blocked_server = Dkbrpc::Server.new("127.0.0.1", 7778, mock("server"))
+            
+        @blocked_server.errback do |e|
+          @errback_called = true
+          @err_message = e.message
+        end
+        
+        @server.start
+        @blocked_server.start
       end
-      @server.start
     end
-
+            
     wait_for{@errback_called}
+    EM.stop
+    thread.join
+    
+    @errback_called.should be_true
+    @err_message.should == "no acceptor"
   end
 
   def wait_for_connections(n, ttl, &block)
@@ -63,7 +76,7 @@ describe "Server Failures" do
 
     if @cons != n
       EventMachine.add_periodic_timer(0.1) do
-        wait_for_connections(n, ttl -1, &block )
+        wait_for_connections(n, ttl-1, &block)
       end
     else
       yield

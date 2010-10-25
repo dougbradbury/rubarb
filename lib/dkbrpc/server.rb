@@ -25,6 +25,7 @@ module Dkbrpc
 
 
   class Server
+    
     def initialize(host, port, api)
       @host = host
       @port = port
@@ -34,10 +35,14 @@ module Dkbrpc
 
     def start(& callback)
       EventMachine::schedule do
-        @server_signature = EventMachine::start_server(@host, @port, Listener) do |connection|
-          connection.api = @api
-          connection.new_connection_callback = callback
-          @connections << connection
+        begin
+          @server_signature = EventMachine::start_server(@host, @port, Listener) do |connection|
+            connection.api = @api
+            connection.new_connection_callback = callback
+            @connections << connection
+          end
+        rescue Exception => e
+          @errback.call(e) if @errback
         end
       end
     end
@@ -50,7 +55,10 @@ module Dkbrpc
         EventMachine::stop_server(@server_signature)
       end if @server_signature
     end
-
+    
+    def errback(&block)
+      @errback = block
+    end
   end
 
   module Listener

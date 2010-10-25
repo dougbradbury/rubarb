@@ -12,7 +12,6 @@ module Dkbrpc
 
     def post_init
       @buffer = ""
-
     end
     
     def connection_completed
@@ -23,14 +22,9 @@ module Dkbrpc
     end
 
     def unbind
-    begin
       @errback.call(ConnectionError.new) if @errback
-    rescue Exception => e
-      puts e.message
-      end
     end
   end
-
 
   module OutgoingHandler
     include ConnectionId
@@ -52,21 +46,15 @@ module Dkbrpc
       end
     end
 
-
     def unbind
       if @incoming_connection
         EM.next_tick { @incoming_connection.close_connection }
       else
-      begin
         @errback.call(Dkbrpc::ConnectionError.new) if @errback
-      rescue Exception => e
-      puts e.message
-      end
       end
     end
 
     private
-
 
     def handshake(buffer)
       if complete_id?(buffer)
@@ -118,6 +106,5 @@ module Dkbrpc
         @remote_connection.close_connection
       end
     end
-
   end
 end

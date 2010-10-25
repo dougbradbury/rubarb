@@ -66,25 +66,64 @@ describe "Server Failures" do
     @err_message.should == "no acceptor"
   end
 
-#  it "handles no method calls" do
+  it "handles no method calls on client" do
+    @errback_called = false
+    @err_messages = []
+    @expected_messages = ["received unexpected message :not_a_method", "Connection Failure"]
+
+    thread = Thread.new do
+      EM.run do
+        @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+        @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+
+        @connection.errback do |e|
+          @errback_called = true
+          @err_messages << e.message
+        end
+
+        @server.start
+        @connection.start do
+          @connection.not_a_method(nil)
+        end
+      end
+    end
+    wait_for{@errback_called}
+    EM.stop
+    thread.join
+
+    @errback_called.should be_true
+    @err_messages[0].include?(@expected_messages[0]).should be_true
+    @err_messages[1].include?(@expected_messages[1]).should be_true
+  end
+
+#  it "handles no method calls on server" do
+#    @errback_called = false
+#    @err_messages = []
+#    @expected_messages = ["received unexpected message :not_a_method", "Connection Failure"]
+#
 #    thread = Thread.new do
-#      begin
-#        EM.run do
-#          @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-#          EventMachine::Connection
-#          @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-#          @server.start
-#          @connection.start do
-#            @connection.not_a_method(nil)
-#          end
+#      EM.run do
+#        @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+#        @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+#
+#        @server.errback do |e|
+#          @errback_called = true
+#          @err_messages << e.message
 #        end
-#      rescue Exception => e
-#        puts e.message
+#
+#        @server.start
+#        @connection.start
+#
+#        @server.not_a_method
 #      end
 #    end
-#    wait_for{false}
+#    wait_for{@errback_called}
 #    EM.stop
 #    thread.join
+#
+#    @errback_called.should be_true
+#    @err_messages[0].include?(@expected_messages[0]).should be_true
+#    @err_messages[1].include?(@expected_messages[1]).should be_true
 #  end
 
   def wait_for_connections(n, ttl, &block)

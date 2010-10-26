@@ -152,6 +152,29 @@ describe "Server Failures" do
     @server.connections.should have(0).items
   end
 
+  it "does not error out after calling stop twice consecutively" do
+    thread = start_reactor
+
+    EventMachine.should_receive(:stop_server).once
+
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+
+    @server.start
+
+    @connected = false
+    @connection.start do
+      @connected = true
+    end
+
+    wait_for{@connected}
+
+    @server.stop
+    @server.stop
+
+    stop_reactor(thread)
+  end
+
   def wait_for_connections(n, ttl, &block)
     if ttl <= 0
       fail("TTL expired")

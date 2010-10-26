@@ -65,6 +65,7 @@ module Dkbrpc
         end
         EventMachine::stop_server(@server_signature)
       end if @server_signature
+      @server_signature = nil
     end
     
     def errback(&block)

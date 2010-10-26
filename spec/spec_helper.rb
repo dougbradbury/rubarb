@@ -27,7 +27,7 @@ def wait_for
     end
   end
 rescue Timeout::Error => e
-  fail("timeout waiting ...")
+
 end
 
 #$DEBUG = true

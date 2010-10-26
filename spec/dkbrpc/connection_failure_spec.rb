@@ -48,7 +48,6 @@ describe "Connection Failures" do
       error.message.should == "Connection Failure"
     end
 
-
     @errback2_called = false
     @connection2.errback do |error|
       @errback2_called = true
@@ -56,21 +55,17 @@ describe "Connection Failures" do
       error.message.should == "Connection Failure"
     end
 
-    @connected = false
     @connection.start do
-      @connected = true
+      @server.stop
     end
 
     @connection2.start
 
-    wait_for{@connected}
-
-    @server.stop
-
     wait_for{@errback_called}
-    @errback_called.should == true
-    wait_for{@errback2_called}
-    @errback2_called.should == true
+    @errback_called.should be_true
 
+    wait_for{@errback2_called}
+    @errback2_called.should be_true
   end
+
 end

@@ -61,9 +61,9 @@ describe "Server Failures" do
     wait_for{@errback_called}
     EM.stop
     thread.join
-    
+
     @errback_called.should be_true
-    @err_message.should == "no acceptor"
+    @err_message.include?("acceptor").should be_true
   end
 
   it "handles no method calls on client" do
@@ -125,6 +125,7 @@ describe "Server Failures" do
     thread.join
 
     @errback_called.should be_true
+    p @err_messages
     @err_messages[0].include?(@expected_messages[0]).should be_true
     @err_messages[1].include?(@expected_messages[1]).should be_true
     @err_messages.should have(3).items

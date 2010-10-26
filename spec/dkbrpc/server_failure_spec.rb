@@ -94,37 +94,41 @@ describe "Server Failures" do
     @errback_called.should be_true
     @err_messages[0].include?(@expected_messages[0]).should be_true
     @err_messages[1].include?(@expected_messages[1]).should be_true
+    @err_messages.should have(2).items
   end
 
-#  it "handles no method calls on server" do
-#    @errback_called = false
-#    @err_messages = []
-#    @expected_messages = ["received unexpected message :not_a_method", "Connection Failure"]
-#
-#    thread = Thread.new do
-#      EM.run do
-#        @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-#        @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-#
-#        @server.errback do |e|
-#          @errback_called = true
-#          @err_messages << e.message
-#        end
-#
-#        @server.start
-#        @connection.start
-#
-#        @server.not_a_method
-#      end
-#    end
-#    wait_for{@errback_called}
-#    EM.stop
-#    thread.join
-#
-#    @errback_called.should be_true
-#    @err_messages[0].include?(@expected_messages[0]).should be_true
-#    @err_messages[1].include?(@expected_messages[1]).should be_true
-#  end
+  it "handles no method calls on server" do
+    @errback_called = false
+    @err_messages = []
+    @expected_messages = ["received unexpected message :not_a_method", "Connection Failure", "Connection Failure"]
+
+    thread = Thread.new do
+      EM.run do
+        @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+        @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+
+        @server.errback do |e|
+          @errback_called = true
+          @err_messages << e.message
+        end
+
+        @server.start do |connection|
+          connection.not_a_method
+        end
+
+        @connection.start
+
+      end
+    end
+    wait_for{@errback_called}
+    EM.stop
+    thread.join
+
+    @errback_called.should be_true
+    @err_messages[0].include?(@expected_messages[0]).should be_true
+    @err_messages[1].include?(@expected_messages[1]).should be_true
+    @err_messages.should have(3).items
+  end
 
   def wait_for_connections(n, ttl, &block)
     if ttl <= 0
@@ -139,5 +143,4 @@ describe "Server Failures" do
       yield
     end
   end
-
 end

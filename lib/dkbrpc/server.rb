@@ -12,13 +12,13 @@ module Dkbrpc
       @remote_connection = outgoing_connection
     end
 
-    def method_missing(method, * args, & block)
+    def method_missing(method, *args, &block)
       EventMachine::schedule do
-        @remote_connection.remote_call(method, args, & block)
+        @remote_connection.remote_call(method, args, &block)
       end
     end
 
-    def errback(& block)
+    def errback(&block)
       @remote_connection.errback = block
     end
   end
@@ -32,7 +32,7 @@ module Dkbrpc
       @connections = []
     end
 
-    def start(& callback)
+    def start(&callback)
       EventMachine::schedule do
         begin
           @server_signature = EventMachine::start_server(@host, @port, Listener) do |connection|

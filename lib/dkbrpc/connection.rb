@@ -95,9 +95,9 @@ module Dkbrpc
       end
     end
 
-    def method_missing(method, * args, & block)
+    def method_missing(method, *args, &block)
       EventMachine::schedule do
-        @remote_connection.remote_call(method, args, & block)
+        @remote_connection.remote_call(method, args, &block)
       end
     end
 

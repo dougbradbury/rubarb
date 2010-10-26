@@ -57,7 +57,7 @@ describe "Connection Failures" do
     end
 
     @connected = false
-    @connection.start do |server|
+    @connection.start do
       @connected = true
     end
 

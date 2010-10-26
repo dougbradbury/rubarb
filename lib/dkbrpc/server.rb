@@ -24,12 +24,22 @@ module Dkbrpc
   end
 
   class Server
+    attr_reader :connections
 
     def initialize(host, port, api)
       @host = host
       @port = port
       @api = api
       @connections = []
+      @unbind_block = Proc.new do
+        unbinded_connections = []
+        @connections.each do |conn|
+          unbinded_connections << conn
+        end
+        unbinded_connections.each do |unbinded_connection|
+          @connections.delete(unbinded_connection)
+        end
+      end
     end
 
     def start(&callback)
@@ -39,6 +49,7 @@ module Dkbrpc
             connection.api = @api
             connection.new_connection_callback = callback
             connection.errback = @errback
+            connection.unbindback = @unbind_block
             @connections << connection
           end
         rescue Exception => e
@@ -59,12 +70,14 @@ module Dkbrpc
     def errback(&block)
       @errback = block
     end
+
   end
 
   module Listener
     attr_accessor :api
     attr_accessor :new_connection_callback
     attr_accessor :errback
+    attr_accessor :unbindback
     include ConnectionId
 
     def post_init
@@ -78,6 +91,7 @@ module Dkbrpc
 
     def unbind
       @errback.call(ConnectionError.new) if @errback
+      @unbindback.call if @unbindback
     end
 
     private

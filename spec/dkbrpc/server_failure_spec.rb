@@ -130,6 +130,28 @@ describe "Server Failures" do
     @err_messages.should have(3).items
   end
 
+  it "removes unbinded connection from connections ivar" do
+    @errback_called = false
+    thread = Thread.new do
+      EM.run do
+        @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+        @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+        @server.errback do |e|
+          @errback_called = true
+        end
+        @server.start do |connection|
+          connection.not_a_method
+        end
+        @connection.start
+      end
+    end
+    wait_for{@errback_called}
+    EM.stop
+    thread.join
+    @errback_called.should be_true
+    @server.connections.should have(0).items
+  end
+
   def wait_for_connections(n, ttl, &block)
     if ttl <= 0
       fail("TTL expired")

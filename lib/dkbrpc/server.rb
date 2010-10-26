@@ -31,14 +31,17 @@ module Dkbrpc
       @port = port
       @api = api
       @connections = []
-      @unbind_block = Proc.new do
-        unbinded_connections = []
+      @unbind_block = Proc.new do |signature|
         @connections.each do |conn|
-          unbinded_connections << conn
+          @connections.delete(conn) if conn.signature == signature
         end
-        unbinded_connections.each do |unbinded_connection|
-          @connections.delete(unbinded_connection)
-        end
+#        unbinded_connections = []
+#        @connections.each do |conn|
+#          unbinded_connections << conn if conn.error?
+#        end
+#        unbinded_connections.each do |unbinded_connection|
+#          @connections.delete(unbinded_connection)
+#        end
       end
     end
 
@@ -92,7 +95,7 @@ module Dkbrpc
 
     def unbind
       @errback.call(ConnectionError.new) if @errback
-      @unbindback.call if @unbindback
+      @unbindback.call(@signature) if @unbindback
     end
 
     private

@@ -132,25 +132,37 @@ describe "Server Failures" do
   end
 
   it "removes unbinded connection from connections ivar" do
-    @errback_called = false
-    thread = Thread.new do
-      EM.run do
-        @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-        @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-        @server.errback do |e|
-          @errback_called = true
-        end
-        @server.start do |connection|
-          connection.not_a_method
-        end
-        @connection.start
-      end
+    thread = start_reactor
+    EM.run do
+      @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+      @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+      @server.start
+      @connection.start
     end
-    wait_for{@errback_called}
-    EM.stop
-    thread.join
-    @errback_called.should be_true
+    wait_for{false}
+    @server.connections.size.times do
+      @server.connections.first.unbind
+    end
     @server.connections.should have(0).items
+    stop_reactor(thread)
+  end
+
+  it "removes one unbinded connection from connections ivar of size two" do
+    thread = start_reactor
+    EM.run do
+      @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+      @connection1 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client1"))
+      @connection2 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client2"))
+      @server.start
+      @connection1.start
+      @connection2.start
+    end
+    wait_for{false}
+    2.times do
+      @server.connections.first.unbind
+    end
+    @server.connections.should have(2).items
+    stop_reactor(thread)
   end
 
   it "does not error out after calling stop twice consecutively" do

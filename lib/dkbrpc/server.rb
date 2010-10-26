@@ -35,13 +35,6 @@ module Dkbrpc
         @connections.each do |conn|
           @connections.delete(conn) if conn.signature == signature
         end
-#        unbinded_connections = []
-#        @connections.each do |conn|
-#          unbinded_connections << conn if conn.error?
-#        end
-#        unbinded_connections.each do |unbinded_connection|
-#          @connections.delete(unbinded_connection)
-#        end
       end
     end
 

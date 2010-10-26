@@ -5,18 +5,19 @@ require 'socket'
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 describe "Server Failures" do
+  before(:each) do
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection1 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    @connection2 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+  end
 
   it "should handle the loss of a client" do
     EM.run do
-      @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-      @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-      @connection2 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-
       @cons = 0
       @server.start do |client|
         @cons += 1
         if (@cons == 2)
-          @connection.stop
+          @connection1.stop
         end
         client.errback do
           @cons -= 1
@@ -26,11 +27,11 @@ describe "Server Failures" do
         end
       end
 
-      @connection.start
+      @connection1.start
       @connection2.start
 
       wait_for_connections(2, 10) do
-        @connection.stop
+        @connection1.stop
         wait_for_connections(1, 10) do
           @cons.should == 1
           EM.stop
@@ -41,26 +42,22 @@ describe "Server Failures" do
   
   it "should call errorback when port is already in use" do
     @errback_called = false
-    
-    thread = Thread.new do
-      EM.run do
-        
-        @server = Dkbrpc::Server.new("127.0.0.1", 7778, mock("server"))
-        @blocked_server = Dkbrpc::Server.new("127.0.0.1", 7778, mock("server"))
-            
-        @blocked_server.errback do |e|
-          @errback_called = true
-          @err_message = e.message
-        end
-        
-        @server.start
-        @blocked_server.start
+
+    thread = start_reactor
+    EM.run do
+      @blocked_server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+
+      @blocked_server.errback do |e|
+        @errback_called = true
+        @err_message = e.message
       end
+
+      @server.start
+      @blocked_server.start
     end
             
     wait_for{@errback_called}
-    EM.stop
-    thread.join
+    stop_reactor(thread)
 
     @errback_called.should be_true
     @err_message.include?("acceptor").should be_true
@@ -71,25 +68,19 @@ describe "Server Failures" do
     @err_messages = []
     @expected_messages = ["received unexpected message :not_a_method", "Connection Failure"]
 
-    thread = Thread.new do
-      EM.run do
-        @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-        @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-
-        @connection.errback do |e|
-          @errback_called = true
-          @err_messages << e.message
-        end
-
-        @server.start
-        @connection.start do
-          @connection.not_a_method(nil)
-        end
+    thread = start_reactor
+    EM.run do
+      @connection1.errback do |e|
+        @errback_called = true
+        @err_messages << e.message
+      end
+      @server.start
+      @connection1.start do
+        @connection1.not_a_method(nil)
       end
     end
     wait_for{@errback_called}
-    EM.stop
-    thread.join
+    stop_reactor(thread)
 
     @errback_called.should be_true
     @err_messages[0].include?(@expected_messages[0]).should be_true
@@ -102,30 +93,24 @@ describe "Server Failures" do
     @err_messages = []
     @expected_messages = ["received unexpected message :not_a_method", "Connection Failure", "Connection Failure"]
 
-    thread = Thread.new do
-      EM.run do
-        @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-        @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-
-        @server.errback do |e|
-          @errback_called = true
-          @err_messages << e.message
-        end
-
-        @server.start do |connection|
-          connection.not_a_method
-        end
-
-        @connection.start
-
+    thread = start_reactor
+    EM.run do
+      @server.errback do |e|
+        @errback_called = true
+        @err_messages << e.message
       end
+
+      @server.start do |connection|
+        connection.not_a_method
+      end
+
+      @connection1.start
+
     end
     wait_for{@errback_called}
-    EM.stop
-    thread.join
+    stop_reactor(thread)
 
     @errback_called.should be_true
-    p @err_messages
     @err_messages[0].include?(@expected_messages[0]).should be_true
     @err_messages[1].include?(@expected_messages[1]).should be_true
     @err_messages.should have(3).items
@@ -134,10 +119,8 @@ describe "Server Failures" do
   it "removes unbinded connection from connections ivar" do
     thread = start_reactor
     EM.run do
-      @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-      @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
       @server.start
-      @connection.start
+      @connection1.start
     end
     wait_for{false}
     @server.connections.size.times do
@@ -150,9 +133,6 @@ describe "Server Failures" do
   it "removes one unbinded connection from connections ivar of size two" do
     thread = start_reactor
     EM.run do
-      @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-      @connection1 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client1"))
-      @connection2 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client2"))
       @server.start
       @connection1.start
       @connection2.start
@@ -170,13 +150,10 @@ describe "Server Failures" do
 
     EventMachine.should_receive(:stop_server).once
 
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-
     @server.start
 
     @connected = false
-    @connection.start do
+    @connection1.start do
       @connected = true
     end
 

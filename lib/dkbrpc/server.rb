@@ -6,7 +6,6 @@ require 'dkbrpc/incoming_connection'
 require 'dkbrpc/id'
 
 module Dkbrpc
-
   class ClientProxy
     def initialize(outgoing_connection)
       @remote_connection = outgoing_connection
@@ -25,6 +24,7 @@ module Dkbrpc
 
   class Server
     attr_reader :connections
+    attr_reader :conn_id_generator
 
     def initialize(host, port, api)
       @host = host
@@ -36,12 +36,14 @@ module Dkbrpc
           @connections.delete(conn) if conn.signature == signature
         end
       end
+      @conn_id_generator = Id.new
     end
 
     def start(&callback)
       EventMachine::schedule do
         begin
           @server_signature = EventMachine::start_server(@host, @port, Listener) do |connection|
+            connection.conn_id_generator = @conn_id_generator
             connection.api = @api
             connection.new_connection_callback = callback
             connection.errback = @errback
@@ -67,10 +69,10 @@ module Dkbrpc
     def errback(&block)
       @errback = block
     end
-
   end
 
   module Listener
+    attr_accessor :conn_id_generator
     attr_accessor :api
     attr_accessor :new_connection_callback
     attr_accessor :errback
@@ -94,7 +96,7 @@ module Dkbrpc
     private
 
     def handle_incoming
-      @id = Id.next
+      @id = @conn_id_generator.next
       send_data(@id)
       self.extend(IncomingConnection)
       switch_protocol

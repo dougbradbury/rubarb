@@ -63,6 +63,12 @@ describe "Client to Server communication and response" do
     def hello_friend(responder, name)
       responder.reply(TestReply.new(name))
     end
+
+    attr_reader :conn_id
+    def save_id(responder)
+      @conn_id = responder.conn_id
+      responder.reply(nil)
+    end
   end
 
   before(:each) do
@@ -77,7 +83,7 @@ describe "Client to Server communication and response" do
   after(:each) do
     stop_reactor(@reactor)
   end
-
+  
   it "without parameters" do
     @callback_called = false
     @server.start
@@ -115,6 +121,23 @@ describe "Client to Server communication and response" do
     end
 
     wait_for {@callback_called}
+  end
+
+  it "ids" do
+    @callback_called = false
+    @new_connection_id = nil
+    @server.start do |new_connection|
+      @new_connection_id = new_connection.conn_id
+    end
+
+    @connection.start do
+      @connection.save_id do |response|
+        @callback_called = true
+      end
+    end
+
+    wait_for {!@new_connection_id.nil?}
+    @server_api.conn_id.should == @new_connection_id
   end
 
 end

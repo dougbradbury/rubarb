@@ -20,6 +20,10 @@ module Dkbrpc
     def errback(&block)
       @remote_connection.errback = block
     end
+
+    def conn_id
+      @remote_connection.conn_id
+    end
   end
 
   class Server
@@ -73,6 +77,7 @@ module Dkbrpc
 
   module Listener
     attr_accessor :conn_id_generator
+    attr_reader :conn_id
     attr_accessor :api
     attr_accessor :new_connection_callback
     attr_accessor :errback
@@ -85,7 +90,7 @@ module Dkbrpc
 
     def receive_data data
       @buffer << data
-      handshake(@buffer) if @id.nil?
+      handshake(@buffer) if @conn_id.nil?
     end
 
     def unbind
@@ -96,15 +101,15 @@ module Dkbrpc
     private
 
     def handle_incoming
-      @id = @conn_id_generator.next
-      send_data(@id)
+      @conn_id = @conn_id_generator.next
+      send_data(@conn_id)
       self.extend(IncomingConnection)
       switch_protocol
     end
 
     def handle_outgoing(buffer)
       if complete_id?(buffer[1..-1])
-        @id = extract_id(buffer[1..-1])
+        @conn_id = extract_id(buffer[1..-1])
         self.extend(OutgoingConnection)
         switch_protocol
         @new_connection_callback.call(ClientProxy.new(self)) if @new_connection_callback

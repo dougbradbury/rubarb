@@ -33,7 +33,7 @@ describe Listener do
     receive_data("5")
     receive_data("00000005")
     @sent_data.should == ""
-    @id.should == "00000005"
+    @conn_id.should == "00000005"
   end
 end
 
@@ -65,6 +65,6 @@ describe Dkbrpc::Server do
     self.should_receive(:send_data).with("00000001")
     self.stub!(:switch_protocol)
     handle_incoming
-    @id.should == "00000001"
+    @conn_id.should == "00000001"
   end
 end

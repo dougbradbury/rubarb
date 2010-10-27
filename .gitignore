@@ -2,3 +2,4 @@ dkbrpc.i*
 pkg
 .idea
 *.iml
+.rakeTasks

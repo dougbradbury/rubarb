@@ -11,6 +11,20 @@ describe "Server Failures" do
     @connection2 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
   end
 
+  def wait_for_connections(n, ttl, &block)
+    if ttl <= 0
+      fail("TTL expired")
+    end
+
+    if @cons != n
+      EventMachine.add_periodic_timer(0.1) do
+        wait_for_connections(n, ttl-1, &block)
+      end
+    else
+      yield
+    end
+  end
+
   it "should handle the loss of a client" do
     EM.run do
       @cons = 0
@@ -39,7 +53,7 @@ describe "Server Failures" do
       end
     end
   end
-  
+
   it "should call errorback when port is already in use" do
     @errback_called = false
 
@@ -55,7 +69,7 @@ describe "Server Failures" do
       @server.start
       @blocked_server.start
     end
-            
+
     wait_for{@errback_called}
     stop_reactor(thread)
 
@@ -165,17 +179,4 @@ describe "Server Failures" do
     stop_reactor(thread)
   end
 
-  def wait_for_connections(n, ttl, &block)
-    if ttl <= 0
-      fail("TTL expired")
-    end
-
-    if @cons != n
-      EventMachine.add_periodic_timer(0.1) do
-        wait_for_connections(n, ttl-1, &block)
-      end
-    else
-      yield
-    end
-  end
 end

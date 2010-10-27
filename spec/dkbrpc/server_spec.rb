@@ -1,13 +1,15 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-
 require 'dkbrpc/server'
 require "dkbrpc/remote_call"
+require 'dkbrpc/connection'
 
-describe Dkbrpc::Listener do
-  include Dkbrpc::RemoteCall
+include Dkbrpc
+
+describe Listener do
+  include RemoteCall
 
   before(:each) do
-    self.extend(Dkbrpc::Listener)
+    self.extend(Listener)
     @sent_data = ""
     self.stub!(:send_data) do |data|
       @sent_data = data
@@ -15,8 +17,14 @@ describe Dkbrpc::Listener do
     post_init
   end
 
+  def set_id(id)
+    id_generator = mock("id")
+    id_generator.stub!(:next).and_return(id)
+    @conn_id_generator = id_generator
+  end
+
   it "should generate and send connection ID" do
-    Dkbrpc::Id.stub(:next).and_return("00000001")
+    set_id("00000001")
     receive_data("4")
     @sent_data.should == "00000001"
   end
@@ -27,5 +35,36 @@ describe Dkbrpc::Listener do
     @sent_data.should == ""
     @id.should == "00000005"
   end
+end
 
+describe Dkbrpc::Server do
+  it "has an instance of Dkbrpc::Id" do
+    server = Server.new("host", "port", "api")
+    server.conn_id_generator.class.should == Dkbrpc::Id
+  end
+
+  it "sets instance of Dkbrpc::Id to each connection" do
+    thread = start_reactor
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    EM.run do
+      @server.start
+      @connection.start
+    end
+    wait_for{false}
+    generator_class = @server.connections.first.conn_id_generator.class
+    stop_reactor(thread)
+    generator_class.should == Dkbrpc::Id
+  end
+
+  it "makes sure @conn_id_generator#next is called in handle_incoming" do
+    self.extend(Listener)
+    id_generator = mock("id")
+    id_generator.stub!(:next).and_return("00000001")
+    @conn_id_generator = id_generator
+    self.should_receive(:send_data).with("00000001")
+    self.stub!(:switch_protocol)
+    handle_incoming
+    @id.should == "00000001"
+  end
 end

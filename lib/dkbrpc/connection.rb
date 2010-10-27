@@ -6,7 +6,7 @@ require 'dkbrpc/incoming_connection'
 require 'dkbrpc/connection_error'
 
 module Dkbrpc
-  module IncommingHandler
+  module IncomingHandler
     include Dkbrpc::IncomingConnection
     attr_accessor :id, :on_connection, :api, :errback
 
@@ -59,7 +59,7 @@ module Dkbrpc
     def handshake(buffer)
       if complete_id?(buffer)
         Dkbrpc::FastMessageProtocol.install(self)
-        EventMachine::connect(@host, @port, IncommingHandler) do |incoming_connection|
+        EventMachine::connect(@host, @port, IncomingHandler) do |incoming_connection|
           @id = extract_id(buffer)
           incoming_connection.id = @id
           incoming_connection.on_connection = @on_connection

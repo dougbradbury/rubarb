@@ -43,7 +43,12 @@ describe Dkbrpc::Server do
     server.conn_id_generator.class.should == Dkbrpc::Id
   end
 
-  it "sets instance of Dkbrpc::Id to each connection" do
+  it "has an instance of Dkbrpc::Id for message ids" do
+    server = Server.new("host", "port", "api")
+    server.msg_id_generator.class.should == Dkbrpc::Id
+  end
+
+  it "sets instance of Dkbrpc::Id to each connection for connection ids" do
     thread = start_reactor
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
     @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
@@ -53,6 +58,20 @@ describe Dkbrpc::Server do
     end
     wait_for{false}
     generator_class = @server.connections.first.conn_id_generator.class
+    stop_reactor(thread)
+    generator_class.should == Dkbrpc::Id
+  end
+
+  it "sets instance of Dkbrpc::Id to each connection for message ids" do
+    thread = start_reactor
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    EM.run do
+      @server.start
+      @connection.start
+    end
+    wait_for{false}
+    generator_class = @server.connections.first.msg_id_generator.class
     stop_reactor(thread)
     generator_class.should == Dkbrpc::Id
   end

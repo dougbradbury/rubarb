@@ -25,6 +25,7 @@ module Dkbrpc
   class Server
     attr_reader :connections
     attr_reader :conn_id_generator
+    attr_reader :msg_id_generator
 
     def initialize(host, port, api)
       @host = host
@@ -37,6 +38,7 @@ module Dkbrpc
         end
       end
       @conn_id_generator = Id.new
+      @msg_id_generator = Id.new
     end
 
     def start(&callback)
@@ -44,6 +46,7 @@ module Dkbrpc
         begin
           @server_signature = EventMachine::start_server(@host, @port, Listener) do |connection|
             connection.conn_id_generator = @conn_id_generator
+            connection.msg_id_generator = @msg_id_generator
             connection.api = @api
             connection.new_connection_callback = callback
             connection.errback = @errback
@@ -73,6 +76,7 @@ module Dkbrpc
 
   module Listener
     attr_accessor :conn_id_generator
+    attr_accessor :msg_id_generator
     attr_accessor :api
     attr_accessor :new_connection_callback
     attr_accessor :errback

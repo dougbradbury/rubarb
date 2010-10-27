@@ -24,7 +24,7 @@ describe Dkbrpc::OutgoingHandler do
     connection_completed
     @host = "1.2.3.4"
     @port = 2321
-    EventMachine.should_receive(:connect).with("1.2.3.4", 2321, Dkbrpc::IncommingHandler)
+    EventMachine.should_receive(:connect).with("1.2.3.4", 2321, Dkbrpc::IncomingHandler)
     receive_data("0000")
     receive_data("0001")
   end
@@ -39,8 +39,8 @@ describe Dkbrpc::OutgoingHandler do
 end
 
 
-describe Dkbrpc::IncommingHandler do
-  include Dkbrpc::IncommingHandler
+describe Dkbrpc::IncomingHandler do
+  include Dkbrpc::IncomingHandler
 
   before(:each) do
     @sent_data = ""

@@ -51,6 +51,7 @@ module Dkbrpc
             connection.new_connection_callback = callback
             connection.errback = @errback
             connection.unbindback = @unbind_block
+            connection.callback = {}
             @connections << connection
           end
         rescue Exception => e
@@ -79,6 +80,7 @@ module Dkbrpc
     attr_accessor :msg_id_generator
     attr_accessor :api
     attr_accessor :new_connection_callback
+    attr_accessor :callback
     attr_accessor :errback
     attr_accessor :unbindback
     include ConnectionId

@@ -5,8 +5,9 @@ module Dkbrpc
   module IncomingConnection
     include RemoteCall
 
-    def receive_message msg
-      method, args = unmarshal_call(msg)
+    def receive_message(message)
+      id, method, args = unmarshal_call(message)
+      @message_id = id
       begin
         api.send(method, *[self, *args]);
       rescue Exception => e
@@ -15,7 +16,7 @@ module Dkbrpc
     end
 
     def reply(*args)
-      send_message(marshal_call(args))
+      send_message(marshal_call(args.unshift(@message_id)))
     end
 
   end

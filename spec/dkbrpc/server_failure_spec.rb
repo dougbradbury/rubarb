@@ -97,6 +97,7 @@ describe "Server Failures" do
     stop_reactor(thread)
 
     @errback_called.should be_true
+p @err_messages[0]
     @err_messages[0].include?(@expected_messages[0]).should be_true
     @err_messages[1].include?(@expected_messages[1]).should be_true
     @err_messages.should have(2).items

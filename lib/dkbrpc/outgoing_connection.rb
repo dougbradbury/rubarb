@@ -4,17 +4,21 @@ module Dkbrpc
   module OutgoingConnection
     include RemoteCall
     def receive_message(message)
-      marshaled_message = *unmarshal_call(message)
-      if marshaled_message.is_a?(Exception)
-        @errback.call(marshaled_message) if @errback
+      id, *marshaled_message = *unmarshal_call(message)
+      if marshaled_message.first.is_a?(Exception)
+        @errback.call(*marshaled_message) if @errback
       else
-        @callback.call(marshaled_message) if @callback
+        if @callback
+          @callback[id].call(*marshaled_message)
+          @callback.delete(id)
+        end
       end
     end
 
     def remote_call(method, *args, &block)
-      @callback = block
-      send_message(marshal_call(method, *args))
+      id = @msg_id_generator.next
+      @callback[id] = block
+      send_message(marshal_call(id, method, *args))
     end
   end
 end

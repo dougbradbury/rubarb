@@ -5,10 +5,14 @@ require 'socket'
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 describe "Server Failures" do
+  before(:all) do
+    @port = 9443
+  end
+
   before(:each) do
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-    @connection1 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-    @connection2 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    @server = Dkbrpc::Server.new("127.0.0.1", @port, mock("server"))
+    @connection1 = Dkbrpc::Connection.new("127.0.0.1", @port, mock("client"))
+    @connection2 = Dkbrpc::Connection.new("127.0.0.1", @port, mock("client"))
   end
 
   def wait_for_connections(n, ttl, &block)
@@ -59,7 +63,7 @@ describe "Server Failures" do
 
     thread = start_reactor
     EM.run do
-      @blocked_server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+      @blocked_server = Dkbrpc::Server.new("127.0.0.1", @port, mock("server"))
 
       @blocked_server.errback do |e|
         @errback_called = true
@@ -77,7 +81,7 @@ describe "Server Failures" do
     @err_message.include?("acceptor").should be_true
   end
 
-  it "handles no method calls on client" do
+  it "handles no method call on server side" do
     @errback_called = false
     @err_messages = []
     @expected_messages = ["received unexpected message :not_a_method", "Connection Failure"]
@@ -90,7 +94,7 @@ describe "Server Failures" do
       end
       @server.start
       @connection1.start do
-        @connection1.not_a_method(nil)
+        @connection1.not_a_method("Calling non-existent method")
       end
     end
     wait_for{@errback_called}
@@ -102,10 +106,10 @@ describe "Server Failures" do
     @err_messages.should have(2).items
   end
 
-  it "handles no method calls on server" do
+  it "handles no method call on client side" do
+    @connection_started = false
     @errback_called = false
     @err_messages = []
-    @connection_started = false
     @expected_messages = ["received unexpected message :not_a_method", "Connection Failure", "Connection Failure"]
 
     thread = start_reactor

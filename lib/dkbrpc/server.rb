@@ -102,9 +102,9 @@ module Dkbrpc
 
     def handle_incoming
       @conn_id = @conn_id_generator.next
-      send_data(@conn_id)
       self.extend(IncomingConnection)
       switch_protocol
+      send_data(@conn_id)
     end
 
     def handle_outgoing(buffer)
@@ -112,6 +112,7 @@ module Dkbrpc
         @conn_id = extract_id(buffer[1..-1])
         self.extend(OutgoingConnection)
         switch_protocol
+        send_message(@conn_id)
         @new_connection_callback.call(ClientProxy.new(self)) if @new_connection_callback
       end
     end

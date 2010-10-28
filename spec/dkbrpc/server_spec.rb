@@ -30,9 +30,12 @@ describe Listener do
   end
 
   it "should receive another connection" do
+    self.stub!(:send_message) do |message|
+      @sent_message = message
+    end
     receive_data("5")
     receive_data("00000005")
-    @sent_data.should == ""
+    @sent_message.should == "00000005"
     @conn_id.should == "00000005"
   end
 end

@@ -62,6 +62,19 @@ describe Dkbrpc::IncommingHandler do
     @id = "00000001"
     
     connection_completed
+    callback.should == false
+    
+    receive_message(@id)
     callback.should == true
+  end
+
+  it "should errback if ids do not match" do
+    errback_msg = false
+    @errback = Proc.new { |error| errback_msg = error.message}
+    @id = "00000001"
+    
+    connection_completed
+    receive_message("00000004")
+    errback_msg.should == "Handshake Failure"
   end
 end

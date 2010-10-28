@@ -7,18 +7,28 @@ require 'dkbrpc/connection_error'
 
 module Dkbrpc
   module IncommingHandler
-    include Dkbrpc::IncomingConnection
+
+    include ConnectionId
+    
     attr_accessor :id, :on_connection, :api, :errback
 
     def post_init
       @buffer = ""
     end
-    
+
     def connection_completed
-      Dkbrpc::FastMessageProtocol.install(self)
       send_data("5")
       send_data(@id)
-      @on_connection.call if @on_connection
+      Dkbrpc::FastMessageProtocol.install(self)
+    end
+
+    def receive_message message
+      if (message == @id)
+        self.extend( Dkbrpc::IncomingConnection )
+        @on_connection.call if @on_connection
+      else
+        @errback.call(ConnectionError.new("Handshake Failure")) if @errback
+      end
     end
 
     def unbind
@@ -78,11 +88,11 @@ module Dkbrpc
       @api = api
     end
 
-    def errback &block
+    def errback & block
       @errback = block
     end
 
-    def start &block
+    def start & block
       EventMachine::schedule do
         EventMachine::connect(@host, @port, OutgoingHandler) do |connection|
           @remote_connection = connection
@@ -95,9 +105,9 @@ module Dkbrpc
       end
     end
 
-    def method_missing(method, *args, &block)
+    def method_missing(method, * args, & block)
       EventMachine::schedule do
-        @remote_connection.remote_call(method, args, &block)
+        @remote_connection.remote_call(method, args, & block)
       end
     end
 

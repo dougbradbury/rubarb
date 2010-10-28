@@ -29,6 +29,6 @@ EM.run do
 
   end
 
-  EventMachine.add_periodic_timer(1) { puts "Connections:  #{connections}" }
+  EventMachine.add_periodic_timer(1) { puts "Connections:  #{connections.keys.inspect}" }
 
 end

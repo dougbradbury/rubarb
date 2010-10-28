@@ -136,7 +136,8 @@ describe "Client to Server communication and response" do
       end
     end
 
-    wait_for {!@new_connection_id.nil?}
+#    wait_for {!@new_connection_id.nil?}
+    wait_for {@callback_called}
     @server_api.conn_id.should == @new_connection_id
   end
 

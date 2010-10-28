@@ -105,6 +105,7 @@ describe "Server Failures" do
   it "handles no method calls on server" do
     @errback_called = false
     @err_messages = []
+    @connection_started = false
     @expected_messages = ["received unexpected message :not_a_method", "Connection Failure", "Connection Failure"]
 
     thread = start_reactor
@@ -118,9 +119,12 @@ describe "Server Failures" do
         connection.not_a_method
       end
 
-      @connection1.start
+      @connection1.start do
+        @connection_started = true
+      end
 
     end
+    wait_for{@connection_started}
     wait_for{@errback_called}
     stop_reactor(thread)
 

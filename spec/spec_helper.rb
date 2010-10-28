@@ -26,8 +26,7 @@ def wait_for
       Thread.pass
     end
   end
-rescue Timeout::Error => e
-
+  rescue Timeout::Error => e
 end
 
 #$DEBUG = true

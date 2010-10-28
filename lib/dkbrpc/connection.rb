@@ -6,10 +6,9 @@ require 'dkbrpc/incoming_connection'
 require 'dkbrpc/connection_error'
 
 module Dkbrpc
-  module IncommingHandler
-
+  module IncomingHandler
     include ConnectionId
-    
+
     attr_accessor :id, :on_connection, :api, :errback
 
     def post_init
@@ -24,7 +23,7 @@ module Dkbrpc
 
     def receive_message message
       if (message == @id)
-        self.extend( Dkbrpc::IncomingConnection )
+        self.extend(Dkbrpc::IncomingConnection)
         @on_connection.call if @on_connection
       else
         @errback.call(ConnectionError.new("Handshake Failure")) if @errback
@@ -39,7 +38,11 @@ module Dkbrpc
   module OutgoingHandler
     include ConnectionId
     include OutgoingConnection
-    attr_accessor :host, :port, :on_connection, :api, :errback
+    attr_accessor :host, :port
+    attr_accessor :on_connection
+    attr_accessor :api
+    attr_accessor :errback, :callback
+    attr_accessor :msg_id_generator
 
     def post_init
       @buffer = ""
@@ -69,7 +72,7 @@ module Dkbrpc
     def handshake(buffer)
       if complete_id?(buffer)
         Dkbrpc::FastMessageProtocol.install(self)
-        EventMachine::connect(@host, @port, IncommingHandler) do |incoming_connection|
+        EventMachine::connect(@host, @port, IncomingHandler) do |incoming_connection|
           @id = extract_id(buffer)
           incoming_connection.id = @id
           incoming_connection.on_connection = @on_connection
@@ -82,10 +85,14 @@ module Dkbrpc
   end
 
   class Connection
+    attr_reader :remote_connection
+    attr_reader :msg_id_generator
+
     def initialize(host, port, api)
       @host = host
       @port = port
       @api = api
+      @msg_id_generator = Id.new
     end
 
     def errback & block
@@ -95,12 +102,14 @@ module Dkbrpc
     def start & block
       EventMachine::schedule do
         EventMachine::connect(@host, @port, OutgoingHandler) do |connection|
-          @remote_connection = connection
           connection.host = @host
           connection.port = @port
           connection.on_connection = block
           connection.api = @api
           connection.errback = @errback
+          connection.callback = {}
+          connection.msg_id_generator = @msg_id_generator
+          @remote_connection = connection
         end
       end
     end

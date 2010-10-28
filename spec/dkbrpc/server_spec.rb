@@ -46,7 +46,12 @@ describe Dkbrpc::Server do
     server.conn_id_generator.class.should == Dkbrpc::Id
   end
 
-  it "sets instance of Dkbrpc::Id to each connection" do
+  it "has an instance of Dkbrpc::Id for message ids" do
+    server = Server.new("host", "port", "api")
+    server.msg_id_generator.class.should == Dkbrpc::Id
+  end
+
+  it "sets instance of Dkbrpc::Id to each connection for connection ids" do
     thread = start_reactor
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
     @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
@@ -60,6 +65,35 @@ describe Dkbrpc::Server do
     generator_class.should == Dkbrpc::Id
   end
 
+  it "sets instance of Dkbrpc::Id to each connection for message ids" do
+    thread = start_reactor
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    EM.run do
+      @server.start
+      @connection.start
+    end
+    wait_for{false}
+    generator_class = @server.connections.first.msg_id_generator.class
+    stop_reactor(thread)
+    generator_class.should == Dkbrpc::Id
+  end
+
+  it "sets an empty callback hash to each connection" do
+    thread = start_reactor
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    EM.run do
+      @server.start
+      @connection.start
+    end
+    wait_for{false}
+    callback = @server.connections.first.callback
+    stop_reactor(thread)
+    callback.class.should == Hash
+    callback.should have(0).items
+  end
+
   it "makes sure @conn_id_generator#next is called in handle_incoming" do
     self.extend(Listener)
     id_generator = mock("id")
@@ -69,5 +103,34 @@ describe Dkbrpc::Server do
     self.stub!(:switch_protocol)
     handle_incoming
     @conn_id.should == "00000001"
+  end
+
+  it "makes two callback calls" do
+    thread = start_reactor
+
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, TestApi.new)
+    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    EM.run do
+      @server.start
+      @connection.start do
+        @connection.get_one do |counter|
+          counter.should == 1
+        end
+        @connection.get_two do |counter|
+          counter.should == 2
+        end
+      end
+    end
+    wait_for{false}
+    stop_reactor(thread)
+  end
+end
+
+class TestApi
+  def get_one(responder)
+    EM.add_timer(0.5) { responder.reply(1) }
+  end
+  def get_two(responder)
+    responder.reply(2)
   end
 end

@@ -17,9 +17,9 @@ module Dkbrpc
     end
 
     def connection_completed
+      Dkbrpc::FastMessageProtocol.install(self)
       send_data("5")
       send_data(@id)
-      Dkbrpc::FastMessageProtocol.install(self)
     end
 
     def receive_message message

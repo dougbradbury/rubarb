@@ -6,7 +6,7 @@ module Dkbrpc
 
     def next
       id = "%08d" % @id
-      @id += 1
+      @id = @id == 99999999 ? 1 : @id + 1
       id
     end
   end

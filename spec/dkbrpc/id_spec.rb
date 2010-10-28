@@ -18,4 +18,9 @@ describe Id do
     @id.next.should == "00000002"
   end
 
+  it "resets counter to one if id is 99999999" do
+    @id.instance_eval{ @id = 99999999 }
+    @id.next
+    @id.next.should == "00000001"
+  end
 end

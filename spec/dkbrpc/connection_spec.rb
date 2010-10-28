@@ -93,9 +93,9 @@ describe Dkbrpc::IncomingHandler do
 
   it "should errback if ids do not match" do
     errback_msg = false
-    @errback = Proc.new { |error| errback_msg = error.message}
+    @errbacks = [Proc.new { |error| errback_msg = error.message}]
     @id = "00000001"
-    
+
     connection_completed
     receive_message("00000004")
     errback_msg.should == "Handshake Failure"

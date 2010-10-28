@@ -130,6 +130,7 @@ describe "Server Failures" do
     end
     wait_for{@connection_started}
     wait_for{@errback_called}
+
     stop_reactor(thread)
 
     @errback_called.should be_true
@@ -187,4 +188,34 @@ describe "Server Failures" do
     stop_reactor(thread)
   end
 
+  it "executes all errback blocks when exception is thrown" do
+    errback1 = false
+    errback2 = false
+    @connection_started = false
+
+    thread = start_reactor
+    EM.run do
+      @server.start do |connection|
+        connection.errback do |e|
+          errback1 = true
+        end
+        connection.errback do |e|
+          errback2 = true
+        end
+        connection.not_a_method
+      end
+
+      @connection1.start do
+        @connection_started = true
+      end
+
+    end
+    wait_for{@connection_started}
+    wait_for{@errback_called}
+
+    stop_reactor(thread)
+
+    errback1.should be_true
+    errback2.should be_true
+  end
 end

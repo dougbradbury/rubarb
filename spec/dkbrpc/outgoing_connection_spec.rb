@@ -29,7 +29,7 @@ describe Dkbrpc::OutgoingConnection do
     block = Proc.new do |v|
       @value = v
     end
-    self.should_receive(:send_message)
+    should_receive(:send_message)
     remote_call(:amethod, "asdf", &block)
     receive_message(marshal_call("00000001", "value"))
     @value.should == "value"
@@ -37,22 +37,24 @@ describe Dkbrpc::OutgoingConnection do
 
   it "does not execute callback block when receive_message is called with an exception" do
     block = Proc.new { puts "Hello" }
-    self.should_receive(:send_message)
+    should_receive(:send_message)
     remote_call(:amethod, "asdf", &block)
+    should_receive(:call_errbacks)
     @callback.should_not_receive(:call)
     receive_message(marshal_call("00000001", Exception.new))
   end
 
   it "saves error message when receive_message is called with an exception" do
+    exception = Exception.new("Hello")
+    error = nil
+    @errbacks = [Proc.new { |e| error = e }]
     block = Proc.new { puts "Hello" }
-    self.should_receive(:send_message)
+
+    should_receive(:send_message)
     remote_call(:amethod, "asdf", &block)
+    stub!(:call_errbacks).and_return(@errbacks.first.call(exception))
     @callback.stub!(:call)
 
-    error = nil
-    @errback = Proc.new { |e| error = e }
-
-    exception = Exception.new("Hello")
     receive_message(marshal_call("00000001", exception))
 
     error.class.should == Exception

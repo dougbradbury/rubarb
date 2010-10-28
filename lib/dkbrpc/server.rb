@@ -18,7 +18,7 @@ module Dkbrpc
     end
 
     def errback(&block)
-      @remote_connection.errback = block
+      @remote_connection.errbacks << block if block
     end
 
     def conn_id
@@ -30,16 +30,15 @@ module Dkbrpc
     attr_reader :connections
     attr_reader :conn_id_generator
     attr_reader :msg_id_generator
+    attr_reader :errback
 
     def initialize(host, port, api)
       @host = host
       @port = port
       @api = api
       @connections = []
-      @unbind_block = Proc.new do |signature|
-        @connections.each do |conn|
-          @connections.delete(conn) if conn.signature == signature
-        end
+      @unbind_block = Proc.new do |connection|
+        @connections.delete(connection)
       end
       @conn_id_generator = Id.new
       @msg_id_generator = Id.new
@@ -53,7 +52,7 @@ module Dkbrpc
             connection.msg_id_generator = @msg_id_generator
             connection.api = @api
             connection.new_connection_callback = callback
-            connection.errback = @errback
+            connection.errbacks = @errback.nil? ? [] : [@errback]
             connection.unbindback = @unbind_block
             @connections << connection
           end
@@ -85,8 +84,9 @@ module Dkbrpc
     attr_accessor :api
     attr_accessor :new_connection_callback
     attr_accessor :callback
-    attr_accessor :errback
+    attr_accessor :errbacks
     attr_accessor :unbindback
+    
     include ConnectionId
 
     def post_init
@@ -99,8 +99,14 @@ module Dkbrpc
     end
 
     def unbind
-      @errback.call(ConnectionError.new) if @errback
-      @unbindback.call(@signature) if @unbindback
+      call_errbacks(ConnectionError.new)
+      @unbindback.call(self) if @unbindback
+    end
+
+    def call_errbacks(message)
+      @errbacks.each do |e|
+        e.call(message)
+      end
     end
 
     private
@@ -133,7 +139,5 @@ module Dkbrpc
     def switch_protocol
       Dkbrpc::FastMessageProtocol.install(self)
     end
-
   end
-
 end

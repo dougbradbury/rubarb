@@ -1,4 +1,5 @@
 require "dkbrpc/remote_call"
+require "dkbrpc/responder"
 
 module Dkbrpc
 
@@ -7,17 +8,16 @@ module Dkbrpc
 
     def receive_message(message)
       id, method, args = unmarshal_call(message)
-      @message_id = id
+      responder = Responder.new(self, id)
       begin
-        api.send(method, *[self, *args]);
+        api.send(method, *[responder, *args]);
       rescue Exception => e
-        reply(e)
+        reply("0", e)
       end
     end
 
-    def reply(*args)
-      send_message(marshal_call(args.unshift(@message_id)))
+    def reply(id, *args)
+      send_message(marshal_call(args.unshift(id)))
     end
-
   end
 end

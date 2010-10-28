@@ -26,13 +26,13 @@ describe Dkbrpc::OutgoingConnection do
   end
 
   it "executes callback block when receive_message is called" do
-    block = Proc.new do |m|
-      @method = m
+    block = Proc.new do |v|
+      @value = v
     end
     self.should_receive(:send_message)
     remote_call(:amethod, "asdf", &block)
-    receive_message(marshal_call("00000001", :amethod))
-    @method.should == :amethod
+    receive_message(marshal_call("00000001", "value"))
+    @value.should == "value"
   end
 
   it "does not execute callback block when receive_message is called with an exception" do
@@ -85,12 +85,16 @@ describe Dkbrpc::OutgoingConnection do
 
   it "calls the corresponding block with given id" do
     block = mock("block")
-    block.should_receive(:call).with(:amethod, "asdf")
+    block.should_receive(:call).with("asdf")
     @callback = { "00000002" => block }
-    receive_message(marshal_call("00000002", :amethod, "asdf"))
+    receive_message(marshal_call("00000002", "asdf"))
   end
 
   it "removes callback from hash after call" do
-  
+    block = mock("block")
+    block.should_receive(:call).with("asdf")
+    @callback = { "00000002" => block }
+    receive_message(marshal_call("00000002", "asdf"))
+    @callback.should have(0).items
   end
 end

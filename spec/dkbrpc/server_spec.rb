@@ -101,4 +101,33 @@ describe Dkbrpc::Server do
     handle_incoming
     @id.should == "00000001"
   end
+
+  it "makes two callback calls" do
+    thread = start_reactor
+
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, TestApi.new)
+    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    EM.run do
+      @server.start
+      @connection.start do
+        @connection.get_one do |counter|
+          counter.should == 1
+        end
+        @connection.get_two do |counter|
+          counter.should == 2
+        end
+      end
+    end
+    wait_for{false}
+    stop_reactor(thread)
+  end
+end
+
+class TestApi
+  def get_one(responder)
+    EM.add_timer(0.5) { responder.reply(1) }
+  end
+  def get_two(responder)
+    responder.reply(2)
+  end
 end

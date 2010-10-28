@@ -6,9 +6,9 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 describe "Server Failures" do
   before(:each) do
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-    @connection1 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-    @connection2 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    @server = Dkbrpc::Server.new("127.0.0.1", 9442, mock("server"))
+    @connection1 = Dkbrpc::Connection.new("127.0.0.1", 9442, mock("client"))
+    @connection2 = Dkbrpc::Connection.new("127.0.0.1", 9442, mock("client"))
   end
 
   def wait_for_connections(n, ttl, &block)
@@ -59,7 +59,7 @@ describe "Server Failures" do
 
     thread = start_reactor
     EM.run do
-      @blocked_server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+      @blocked_server = Dkbrpc::Server.new("127.0.0.1", 9442, mock("server"))
 
       @blocked_server.errback do |e|
         @errback_called = true
@@ -77,6 +77,27 @@ describe "Server Failures" do
     @err_message.include?("acceptor").should be_true
   end
 
+
+#  it "makes two callback calls" do
+#    thread = start_reactor
+#
+#    @server = Dkbrpc::Server.new("127.0.0.1", 9441, TestApi.new)
+#    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+#    EM.run do
+#      @server.start
+#      @connection.start do
+#        @connection.get_one do |counter|
+#          counter.should == 1
+#        end
+#        @connection.get_two do |counter|
+#          counter.should == 2
+#        end
+#      end
+#    end
+#    wait_for{false}
+#    stop_reactor(thread)
+#  end
+
   it "handles no method calls on client" do
     @errback_called = false
     @err_messages = []
@@ -90,14 +111,13 @@ describe "Server Failures" do
       end
       @server.start
       @connection1.start do
-        @connection1.not_a_method(nil)
+        @connection1.not_a_method("Calling non-existent method")
       end
     end
     wait_for{@errback_called}
     stop_reactor(thread)
 
     @errback_called.should be_true
-p @err_messages[0]
     @err_messages[0].include?(@expected_messages[0]).should be_true
     @err_messages[1].include?(@expected_messages[1]).should be_true
     @err_messages.should have(2).items

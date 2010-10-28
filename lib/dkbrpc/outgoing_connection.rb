@@ -8,7 +8,10 @@ module Dkbrpc
       if marshaled_message.first.is_a?(Exception)
         @errback.call(*marshaled_message) if @errback
       else
-        @callback[id].call(*marshaled_message) if @callback
+        if @callback
+          @callback[id].call(*marshaled_message)
+          @callback.delete(id)
+        end
       end
     end
 

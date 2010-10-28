@@ -107,7 +107,6 @@ module Dkbrpc
           connection.on_connection = block
           connection.api = @api
           connection.errback = @errback
-          connection.callback = {}
           connection.msg_id_generator = @msg_id_generator
           @remote_connection = connection
         end

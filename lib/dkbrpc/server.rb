@@ -55,7 +55,6 @@ module Dkbrpc
             connection.new_connection_callback = callback
             connection.errback = @errback
             connection.unbindback = @unbind_block
-            connection.callback = {}
             @connections << connection
           end
         rescue Exception => e

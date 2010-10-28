@@ -5,19 +5,6 @@ require "dkbrpc/connection"
 require "dkbrpc/remote_call"
 
 describe Dkbrpc::Connection do
-  it "should have a hash map for callback" do
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-    thread = start_reactor
-    EM.run do
-      @server.start
-      @connection.start
-    end
-    wait_for{false}
-    @connection.remote_connection.callback.class.should == Hash
-    stop_reactor(thread)
-  end
-
   it "has an instance of Dkbrpc::Id" do
     @connection = Dkbrpc::Connection.new("host", "port", "api")
     @connection.msg_id_generator.class.should == Dkbrpc::Id

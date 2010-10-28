@@ -79,21 +79,6 @@ describe Dkbrpc::Server do
     generator_class.should == Dkbrpc::Id
   end
 
-  it "sets an empty callback hash to each connection" do
-    thread = start_reactor
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-    EM.run do
-      @server.start
-      @connection.start
-    end
-    wait_for{false}
-    callback = @server.connections.first.callback
-    stop_reactor(thread)
-    callback.class.should == Hash
-    callback.should have(0).items
-  end
-
   it "makes sure @conn_id_generator#next is called in handle_incoming" do
     self.extend(Listener)
     id_generator = mock("id")

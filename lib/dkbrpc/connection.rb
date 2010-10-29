@@ -9,7 +9,10 @@ module Dkbrpc
   module IncomingHandler
     include ConnectionId
 
-    attr_accessor :id, :on_connection, :api, :errback
+    attr_accessor :id
+    attr_accessor :on_connection
+    attr_accessor :api
+    attr_accessor :errbacks
 
     def post_init
       @buffer = ""
@@ -26,22 +29,31 @@ module Dkbrpc
         self.extend(Dkbrpc::IncomingConnection)
         @on_connection.call if @on_connection
       else
-        @errback.call(ConnectionError.new("Handshake Failure")) if @errback
+        call_errbacks(ConnectionError.new("Handshake Failure"))
       end
     end
 
     def unbind
-      @errback.call(ConnectionError.new) if @errback
+      call_errbacks(ConnectionError.new)
     end
+
+    def call_errbacks(message)
+      @errbacks.each do |e|
+        e.call(message)
+      end
+    end
+
   end
 
   module OutgoingHandler
     include ConnectionId
     include OutgoingConnection
-    attr_accessor :host, :port
+    attr_accessor :host
+    attr_accessor :port
     attr_accessor :on_connection
     attr_accessor :api
-    attr_accessor :errback, :callback
+    attr_accessor :errbacks
+    attr_accessor :callback
     attr_accessor :msg_id_generator
 
     def post_init
@@ -63,11 +75,17 @@ module Dkbrpc
       if @incoming_connection
         EM.next_tick { @incoming_connection.close_connection }
       else
-        @errback.call(Dkbrpc::ConnectionError.new) if @errback
+        call_errbacks(ConnectionError.new)
       end
     end
 
     private
+
+    def call_errbacks(message)
+      @errbacks.each do |e|
+        e.call(message)
+      end
+    end
 
     def handshake(buffer)
       if complete_id?(buffer)
@@ -77,7 +95,7 @@ module Dkbrpc
           incoming_connection.id = @id
           incoming_connection.on_connection = @on_connection
           incoming_connection.api = @api
-          incoming_connection.errback = @errback
+          incoming_connection.errbacks = @errbacks
           @incoming_connection = incoming_connection
         end
       end
@@ -93,30 +111,30 @@ module Dkbrpc
       @port = port
       @api = api
       @msg_id_generator = Id.new
+      @errbacks = []
     end
 
-    def errback & block
-      @errback = block
+    def errback &block
+      @errbacks << block if block
     end
 
-    def start & block
+    def start &block
       EventMachine::schedule do
         EventMachine::connect(@host, @port, OutgoingHandler) do |connection|
           connection.host = @host
           connection.port = @port
           connection.on_connection = block
           connection.api = @api
-          connection.errback = @errback
-          connection.callback = {}
+          connection.errbacks = @errbacks
           connection.msg_id_generator = @msg_id_generator
           @remote_connection = connection
         end
       end
     end
 
-    def method_missing(method, * args, & block)
+    def method_missing(method, *args, &block)
       EventMachine::schedule do
-        @remote_connection.remote_call(method, args, & block)
+        @remote_connection.remote_call(method, args, &block)
       end
     end
 

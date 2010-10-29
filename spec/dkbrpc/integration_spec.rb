@@ -52,8 +52,10 @@ describe "Client to Server communication and response" do
   end
 
   class TestServerApi
+    attr_reader :hi_called
     def hi(responder)
       responder.reply("how are you?")
+      @hi_called = true
     end
 
     def hello(responder, name)
@@ -82,6 +84,16 @@ describe "Client to Server communication and response" do
 
   after(:each) do
     stop_reactor(@reactor)
+  end
+
+  it "without a callback" do
+    @server.start
+
+    @connection.start do
+      @connection.hi
+    end
+
+    wait_for {@server_api.hi_called}
   end
   
   it "without parameters" do

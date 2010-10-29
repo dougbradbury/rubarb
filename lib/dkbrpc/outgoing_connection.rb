@@ -16,11 +16,12 @@ module Dkbrpc
       end
     end
 
-    def remote_call(method, * args, & block)
+    def remote_call(method, *args, &block)
       id = @msg_id_generator.next
       @callback ||= {}
       @callback[id] = block
-      send_message(marshal_call(id, method, * args))
+      send_message(marshal_call(id, method, *args))
     end
+
   end
 end

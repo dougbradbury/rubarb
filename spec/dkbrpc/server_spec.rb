@@ -2,6 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 require 'dkbrpc/server'
 require "dkbrpc/remote_call"
 require 'dkbrpc/connection'
+require 'dkbrpc/default'
 
 include Dkbrpc
 
@@ -9,7 +10,7 @@ describe Listener do
   include RemoteCall
 
   before(:each) do
-    self.extend(Listener)
+    extend(Listener)
     @sent_data = ""
     self.stub!(:send_data) do |data|
       @sent_data = data
@@ -30,7 +31,7 @@ describe Listener do
   end
 
   it "should receive another connection" do
-    self.stub!(:send_message) do |message|
+    stub!(:send_message) do |message|
       @sent_message = message
     end
     receive_data("5")
@@ -41,6 +42,7 @@ describe Listener do
 end
 
 describe Dkbrpc::Server do
+
   it "has an instance of Dkbrpc::Id" do
     server = Server.new("host", "port", "api")
     server.conn_id_generator.class.should == Dkbrpc::Id
@@ -49,6 +51,21 @@ describe Dkbrpc::Server do
   it "has an instance of Dkbrpc::Id for message ids" do
     server = Server.new("host", "port", "api")
     server.msg_id_generator.class.should == Dkbrpc::Id
+  end
+
+  it "has an instance of insecure_methods" do
+    server = Server.new("host", "port", "api")
+    server.insecure_methods.class.should == Array
+  end
+
+  it "has default insecure_methods" do
+    server = Server.new("host", "port", "api")
+    server.insecure_methods.should == Dkbrpc::Default::INSECURE_METHODS
+  end
+
+  it "accepts custom insecure methods on initilization" do
+    server = Server.new("host", "port", "api", CUSTOM_INSECURE_METHODS)
+    server.insecure_methods.should == CUSTOM_INSECURE_METHODS
   end
 
   it "sets instance of Dkbrpc::Id to each connection for connection ids" do
@@ -79,13 +96,27 @@ describe Dkbrpc::Server do
     generator_class.should == Dkbrpc::Id
   end
 
+  it "sets instance of insecure_methods on each connection" do
+    thread = start_reactor
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    EM.run do
+      @server.start
+      @connection.start
+    end
+    wait_for{false}
+    insecure_methods = @server.connections.first.insecure_methods
+    stop_reactor(thread)
+    insecure_methods.should == Dkbrpc::Default::INSECURE_METHODS
+  end
+
   it "makes sure @conn_id_generator#next is called in handle_incoming" do
-    self.extend(Listener)
+    extend(Listener)
     id_generator = mock("id")
     id_generator.stub!(:next).and_return("00000001")
     @conn_id_generator = id_generator
-    self.should_receive(:send_data).with("00000001")
-    self.stub!(:switch_protocol)
+    should_receive(:send_data).with("00000001")
+    stub!(:switch_protocol)
     handle_incoming
     @conn_id.should == "00000001"
   end

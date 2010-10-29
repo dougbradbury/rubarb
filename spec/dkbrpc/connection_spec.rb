@@ -3,8 +3,11 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 require 'dkbrpc/server'
 require "dkbrpc/connection"
 require "dkbrpc/remote_call"
+require "dkbrpc/default"
 
 describe Dkbrpc::Connection do
+  CUSTOM_INSECURE_METHODS = [:==, :===, :=~]
+
   it "has an instance of Dkbrpc::Id" do
     @connection = Dkbrpc::Connection.new("host", "port", "api")
     @connection.msg_id_generator.class.should == Dkbrpc::Id
@@ -20,6 +23,45 @@ describe Dkbrpc::Connection do
     end
     wait_for{false}
     @connection.remote_connection.msg_id_generator.class.should == Dkbrpc::Id
+    stop_reactor(thread)
+  end
+
+  it "sets an instance of insecure_methods to remote_connection" do
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    thread = start_reactor
+    EM.run do
+      @server.start
+      @connection.start
+    end
+    wait_for{false}
+    @connection.remote_connection.insecure_methods.class.should == Array
+    stop_reactor(thread)
+  end
+
+  it "has default insecure methods" do
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    thread = start_reactor
+    EM.run do
+      @server.start
+      @connection.start
+    end
+    wait_for{false}
+    @connection.remote_connection.insecure_methods.should == Dkbrpc::Default::INSECURE_METHODS
+    stop_reactor(thread)
+  end
+
+  it "can accept custom insecure methods" do
+    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"), CUSTOM_INSECURE_METHODS)
+    thread = start_reactor
+    EM.run do
+      @server.start
+      @connection.start
+    end
+    wait_for{false}
+    @connection.remote_connection.insecure_methods.should == CUSTOM_INSECURE_METHODS
     stop_reactor(thread)
   end
 end

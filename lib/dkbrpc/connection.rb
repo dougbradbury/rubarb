@@ -4,6 +4,7 @@ require "dkbrpc/remote_call"
 require 'dkbrpc/outgoing_connection'
 require 'dkbrpc/incoming_connection'
 require 'dkbrpc/connection_error'
+require 'dkbrpc/default'
 
 module Dkbrpc
   module IncomingHandler
@@ -13,6 +14,7 @@ module Dkbrpc
     attr_accessor :on_connection
     attr_accessor :api
     attr_accessor :errbacks
+    attr_accessor :insecure_methods
 
     def post_init
       @buffer = ""
@@ -55,6 +57,7 @@ module Dkbrpc
     attr_accessor :errbacks
     attr_accessor :callback
     attr_accessor :msg_id_generator
+    attr_accessor :insecure_methods
 
     def post_init
       @buffer = ""
@@ -96,6 +99,7 @@ module Dkbrpc
           incoming_connection.on_connection = @on_connection
           incoming_connection.api = @api
           incoming_connection.errbacks = @errbacks
+          incoming_connection.insecure_methods = @insecure_methods
           @incoming_connection = incoming_connection
         end
       end
@@ -103,15 +107,16 @@ module Dkbrpc
   end
 
   class Connection
-    attr_reader :remote_connection
-    attr_reader :msg_id_generator
+    attr_reader   :remote_connection
+    attr_reader   :msg_id_generator
 
-    def initialize(host, port, api)
+    def initialize(host, port, api, insecure_methods=Default::INSECURE_METHODS)
       @host = host
       @port = port
       @api = api
       @msg_id_generator = Id.new
       @errbacks = []
+      @insecure_methods = insecure_methods
     end
 
     def errback &block
@@ -127,6 +132,7 @@ module Dkbrpc
           connection.api = @api
           connection.errbacks = @errbacks
           connection.msg_id_generator = @msg_id_generator
+          connection.insecure_methods = @insecure_methods
           @remote_connection = connection
         end
       end

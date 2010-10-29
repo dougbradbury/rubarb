@@ -4,6 +4,7 @@ require "dkbrpc/fast_message_protocol"
 require 'dkbrpc/outgoing_connection'
 require 'dkbrpc/incoming_connection'
 require 'dkbrpc/id'
+require 'dkbrpc/default'
 
 module Dkbrpc
   class ClientProxy
@@ -31,8 +32,9 @@ module Dkbrpc
     attr_reader :conn_id_generator
     attr_reader :msg_id_generator
     attr_reader :errback
+    attr_reader :insecure_methods
 
-    def initialize(host, port, api)
+    def initialize(host, port, api, insecure_methods=Default::INSECURE_METHODS)
       @host = host
       @port = port
       @api = api
@@ -42,6 +44,7 @@ module Dkbrpc
       end
       @conn_id_generator = Id.new
       @msg_id_generator = Id.new
+      @insecure_methods = insecure_methods
     end
 
     def start(&callback)
@@ -54,6 +57,7 @@ module Dkbrpc
             connection.new_connection_callback = callback
             connection.errbacks = @errback.nil? ? [] : [@errback]
             connection.unbindback = @unbind_block
+            connection.insecure_methods = @insecure_methods
             @connections << connection
           end
         rescue Exception => e
@@ -86,7 +90,8 @@ module Dkbrpc
     attr_accessor :callback
     attr_accessor :errbacks
     attr_accessor :unbindback
-    
+    attr_accessor :insecure_methods
+
     include ConnectionId
 
     def post_init

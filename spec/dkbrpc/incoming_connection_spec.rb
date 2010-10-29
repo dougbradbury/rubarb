@@ -2,6 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 require "dkbrpc/incoming_connection"
 require "dkbrpc/remote_call"
+require "dkbrpc/default"
 
 describe Dkbrpc::IncomingConnection do
   include Dkbrpc::RemoteCall
@@ -13,13 +14,16 @@ describe Dkbrpc::IncomingConnection do
     def amethod(responder, dodo)
       @dodo = dodo
     end
+    def ==(rhs)
+    end
   end
 
   before(:each) do
     @api = TestApi.new
+    @insecure_methods = Dkbrpc::Default::INSECURE_METHODS
   end
 
-  it "should receive message " do
+  it "should receive message" do
     receive_message(marshal_call("00000001", :amethod, "goo"))
     @api.dodo.should == "goo"
   end
@@ -30,7 +34,27 @@ describe Dkbrpc::IncomingConnection do
       exception.message.include?("undefined method").should == true
     end
     receive_message(marshal_call("00000001", :not_a_method, "foo"))
-    @api.dodo.should_not == "foo"
+    @api.should_not_receive(:send)
+  end
+
+  def blocks_method_in_receive_message(method)
+    @method = method
+    should_receive(:reply).with do |id, exception|
+      id.should == "0"
+      exception.message.should == "Remote client attempts to call method #{@method}, but was denied."
+    end
+    receive_message(marshal_call("00000001", method, "foo"))
+    @api.should_not_receive(:send)
+  end
+
+  it "blocks :== in receive_message" do
+    blocks_method_in_receive_message(:==)
+  end
+
+  it "blocks any insecure method in receive_message" do
+    Dkbrpc::Default::INSECURE_METHODS.each do |method|
+      blocks_method_in_receive_message(method)
+    end
   end
 
   it "receives message with id, method, and *args" do

@@ -99,4 +99,5 @@ describe Dkbrpc::OutgoingConnection do
     receive_message(marshal_call("00000002", "asdf"))
     @callback.should have(0).items
   end
+
 end

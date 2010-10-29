@@ -1,12 +1,13 @@
 require 'dkbrpc/server'
 require 'dkbrpc/connection'
+require 'dkbrpc/insecure_method_call_error'
 require 'socket'
 
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 describe "Server Failures" do
   before(:all) do
-    @port = 9443
+    @port = 9441
   end
 
   before(:each) do
@@ -19,7 +20,7 @@ describe "Server Failures" do
     if ttl <= 0
       fail("TTL expired")
     end
-
+  
     if @cons != n
       EventMachine.add_periodic_timer(0.1) do
         wait_for_connections(n, ttl-1, &block)
@@ -28,7 +29,7 @@ describe "Server Failures" do
       yield
     end
   end
-
+  
   it "should handle the loss of a client" do
     EM.run do
       @cons = 0
@@ -44,10 +45,10 @@ describe "Server Failures" do
           end
         end
       end
-
+  
       @connection1.start
       @connection2.start
-
+  
       wait_for_connections(2, 10) do
         @connection1.stop
         wait_for_connections(1, 10) do
@@ -57,35 +58,35 @@ describe "Server Failures" do
       end
     end
   end
-
+  
   it "should call errorback when port is already in use" do
     @errback_called = false
-
+  
     thread = start_reactor
     EM.run do
       @blocked_server = Dkbrpc::Server.new("127.0.0.1", @port, mock("server"))
-
+  
       @blocked_server.errback do |e|
         @errback_called = true
         @err_message = e.message
       end
-
+  
       @server.start
       @blocked_server.start
     end
-
+  
     wait_for{@errback_called}
     stop_reactor(thread)
-
+  
     @errback_called.should be_true
     @err_message.include?("acceptor").should be_true
   end
-
+  
   it "handles no method call on server side" do
     @errback_called = false
     @err_messages = []
     @expected_messages = ["received unexpected message :not_a_method", "Connection Failure"]
-
+  
     thread = start_reactor
     EM.run do
       @connection1.errback do |e|
@@ -99,6 +100,68 @@ describe "Server Failures" do
     end
     wait_for{@errback_called}
     stop_reactor(thread)
+  
+    @errback_called.should be_true
+    @err_messages[0].include?(@expected_messages[0]).should be_true
+    @err_messages[1].include?(@expected_messages[1]).should be_true
+    @err_messages.should have(2).items
+  end
+  
+  it "handles no method call on client side" do
+    @connection_started = false
+    @errback_called = false
+    @err_messages = []
+    @expected_messages = ["received unexpected message :not_a_method", "Connection Failure", "Connection Failure"]
+  
+    thread = start_reactor
+    EM.run do
+      @server.errback do |e|
+        @errback_called = true
+        @err_messages << e.message
+      end
+  
+      @server.start do |connection|
+        connection.not_a_method
+      end
+  
+      @connection1.start do
+        @connection_started = true
+      end
+  
+    end
+    wait_for{@connection_started}
+    wait_for{@errback_called}
+  
+    stop_reactor(thread)
+  
+    @errback_called.should be_true
+    @err_messages[0].include?(@expected_messages[0]).should be_true
+    @err_messages[1].include?(@expected_messages[1]).should be_true
+    @err_messages[2].include?(@expected_messages[2]).should be_true
+    @err_messages.should have(3).items
+  end
+
+  it "handles insecure method call on server side" do
+    @errback_called = false
+    @err_messages = []
+    @expected_messages = ["Remote client attempts to call method class, but was denied.", "Connection Failure"]
+
+    thread = start_reactor
+    EM.run do
+      @connection1.errback do |e|
+        @errback_called = true
+        @err_messages << e.message
+      end
+      @server.start
+      @connection1.start do
+        @connection1.instance_eval("undef class")
+        @connection1.class do |result|
+          result.should be_a(InsecureMethodCallError)
+        end
+      end
+    end
+    wait_for{@errback_called}
+    stop_reactor(thread)
 
     @errback_called.should be_true
     @err_messages[0].include?(@expected_messages[0]).should be_true
@@ -106,11 +169,11 @@ describe "Server Failures" do
     @err_messages.should have(2).items
   end
 
-  it "handles no method call on client side" do
+  it "handles insecure method call on client side" do
     @connection_started = false
     @errback_called = false
     @err_messages = []
-    @expected_messages = ["received unexpected message :not_a_method", "Connection Failure", "Connection Failure"]
+    @expected_messages = ["Remote client attempts to call method class, but was denied.", "Connection Failure", "Connection Failure"]
 
     thread = start_reactor
     EM.run do
@@ -120,7 +183,10 @@ describe "Server Failures" do
       end
 
       @server.start do |connection|
-        connection.not_a_method
+        connection.instance_eval("undef class")
+        connection.class do |result|
+          result.should be_a(InsecureMethodCallError)
+        end
       end
 
       @connection1.start do
@@ -136,6 +202,7 @@ describe "Server Failures" do
     @errback_called.should be_true
     @err_messages[0].include?(@expected_messages[0]).should be_true
     @err_messages[1].include?(@expected_messages[1]).should be_true
+    @err_messages[2].include?(@expected_messages[2]).should be_true
     @err_messages.should have(3).items
   end
 
@@ -152,7 +219,7 @@ describe "Server Failures" do
     @server.connections.should have(0).items
     stop_reactor(thread)
   end
-
+  
   it "removes one unbinded connection from connections ivar of size two" do
     thread = start_reactor
     EM.run do
@@ -167,32 +234,32 @@ describe "Server Failures" do
     @server.connections.should have(2).items
     stop_reactor(thread)
   end
-
+  
   it "does not error out after calling stop twice consecutively" do
     thread = start_reactor
-
+  
     EventMachine.should_receive(:stop_server).once
-
+  
     @server.start
-
+  
     @connected = false
     @connection1.start do
       @connected = true
     end
-
+  
     wait_for{@connected}
-
+  
     @server.stop
     @server.stop
-
+  
     stop_reactor(thread)
   end
-
+  
   it "executes all errback blocks when exception is thrown" do
     errback1 = false
     errback2 = false
     @connection_started = false
-
+  
     thread = start_reactor
     EM.run do
       @server.start do |connection|
@@ -204,17 +271,17 @@ describe "Server Failures" do
         end
         connection.not_a_method
       end
-
+  
       @connection1.start do
         @connection_started = true
       end
-
+  
     end
     wait_for{@connection_started}
     wait_for{@errback_called}
-
+  
     stop_reactor(thread)
-
+  
     errback1.should be_true
     errback2.should be_true
   end

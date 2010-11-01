@@ -39,9 +39,28 @@ describe Listener do
     @sent_message.should == "00000005"
     @conn_id.should == "00000005"
   end
+
+  class OtherProtocol
+
+    attr_reader :buffer, :connection
+    def handle_connection(buffer, connection)
+      @buffer = buffer
+      @connection = connection
+    end
+
+  end
+
+  it "should handle other protocols" do
+    @external_protocol = OtherProtocol.new
+    receive_data("1")
+
+    @external_protocol.buffer.should == "1"
+    @external_protocol.connection.should_not be_nil
+  end
 end
 
 describe Dkbrpc::Server do
+  CUSTOM_INSECURE_METHODS = [:==, :===, :=~]
 
   it "has an instance of Dkbrpc::Id" do
     server = Server.new("host", "port", "api")
@@ -72,7 +91,7 @@ describe Dkbrpc::Server do
     thread = start_reactor
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
     @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-    EM.run do
+    EM.schedule do
       @server.start
       @connection.start
     end
@@ -86,7 +105,7 @@ describe Dkbrpc::Server do
     thread = start_reactor
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
     @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-    EM.run do
+    EM.schedule do
       @server.start
       @connection.start
     end
@@ -100,7 +119,7 @@ describe Dkbrpc::Server do
     thread = start_reactor
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
     @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-    EM.run do
+    EM.schedule do
       @server.start
       @connection.start
     end
@@ -121,7 +140,7 @@ describe Dkbrpc::Server do
     @conn_id.should == "00000001"
   end
 
-  it "makes two callback calls" do
+  it "makes two overlapping calls" do
     thread = start_reactor
 
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, TestApi.new)

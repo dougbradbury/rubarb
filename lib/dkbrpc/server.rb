@@ -33,6 +33,7 @@ module Dkbrpc
     attr_reader :msg_id_generator
     attr_reader :errback
     attr_reader :insecure_methods
+    attr_accessor :external_protocol
 
     def initialize(host, port, api, insecure_methods=Default::INSECURE_METHODS)
       @host = host
@@ -58,6 +59,7 @@ module Dkbrpc
             connection.errbacks = @errback.nil? ? [] : [@errback]
             connection.unbindback = @unbind_block
             connection.insecure_methods = @insecure_methods
+            connection.external_protocol = @external_protocol
             @connections << connection
           end
         rescue Exception => e
@@ -82,6 +84,8 @@ module Dkbrpc
   end
 
   module Listener
+    INCOMING_CONNECTION = "4"[0]
+    OUTGOING_CONNECTION = "5"[0]
     attr_accessor :conn_id_generator
     attr_reader   :conn_id
     attr_accessor :msg_id_generator
@@ -91,6 +95,7 @@ module Dkbrpc
     attr_accessor :errbacks
     attr_accessor :unbindback
     attr_accessor :insecure_methods
+    attr_accessor :external_protocol
 
     include ConnectionId
 
@@ -134,10 +139,12 @@ module Dkbrpc
     end
 
     def handshake(buffer)
-      if buffer[0] == "4"[0]
+      if buffer[0] == INCOMING_CONNECTION
         handle_incoming
-      elsif buffer[0] == "5"[0]
+      elsif buffer[0] == OUTGOING_CONNECTION
         handle_outgoing(buffer)
+      else
+        @external_protocol.handle_connection(buffer, self) if @external_protocol
       end
     end
 

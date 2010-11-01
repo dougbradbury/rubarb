@@ -89,6 +89,7 @@ describe "Server Failures" do
   
   it "should call errorback when port is already in use" do
     errback_called = false
+    err_message = ""
   
     thread = start_reactor
     EM.run do

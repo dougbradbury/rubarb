@@ -60,7 +60,6 @@ describe Listener do
 end
 
 describe Dkbrpc::Server do
-  CUSTOM_INSECURE_METHODS = [:==, :===, :=~]
 
   it "has an instance of Dkbrpc::Id" do
     server = Server.new("host", "port", "api")
@@ -83,8 +82,8 @@ describe Dkbrpc::Server do
   end
 
   it "accepts custom insecure methods on initilization" do
-    server = Server.new("host", "port", "api", CUSTOM_INSECURE_METHODS)
-    server.insecure_methods.should == CUSTOM_INSECURE_METHODS
+    server = Server.new("host", "port", "api", [:==, :===, :=~])
+    server.insecure_methods.should == [:==, :===, :=~]
   end
 
   it "sets instance of Dkbrpc::Id to each connection for connection ids" do

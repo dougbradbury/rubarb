@@ -5,12 +5,12 @@ module Dkbrpc
     include RemoteCall
 
     def receive_message(message)
-      id, *marshaled_message = *unmarshal_call(message)
-      if marshaled_message.first.is_a?(Exception)
-        call_errbacks(*marshaled_message)
+      id, *unmarshaled_message = *unmarshal_call(message)
+      if unmarshaled_message.first.is_a?(Exception)
+        call_errbacks(*unmarshaled_message)
       else
         if @callback[id]
-          @callback[id].call(*marshaled_message)
+          @callback[id].call(*unmarshaled_message)
           @callback.delete(id)
         end
       end

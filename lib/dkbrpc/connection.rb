@@ -144,9 +144,14 @@ module Dkbrpc
       end
     end
 
-    def stop
+    def stop(& callback)
       EventMachine::schedule do
-        @remote_connection.close_connection
+        if @remote_connection
+          @remote_connection.close_connection
+          callback.call(true) if callback
+        else
+          callback.call(false) if callback
+        end
       end
     end
   end

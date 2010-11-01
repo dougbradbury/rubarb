@@ -88,13 +88,14 @@ describe Dkbrpc::Server do
 
   it "sets instance of Dkbrpc::Id to each connection for connection ids" do
     thread = start_reactor
+    connected = false
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
     @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
     EM.schedule do
       @server.start
-      @connection.start
+      @connection.start {connected = true}
     end
-    wait_for{false}
+    wait_for{connected}
     generator_class = @server.connections.first.conn_id_generator.class
     stop_reactor(thread)
     generator_class.should == Dkbrpc::Id
@@ -102,13 +103,14 @@ describe Dkbrpc::Server do
 
   it "sets instance of Dkbrpc::Id to each connection for message ids" do
     thread = start_reactor
+    connected = false
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
     @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
     EM.schedule do
       @server.start
-      @connection.start
+      @connection.start {connected = true}
     end
-    wait_for{false}
+    wait_for{connected}
     generator_class = @server.connections.first.msg_id_generator.class
     stop_reactor(thread)
     generator_class.should == Dkbrpc::Id
@@ -116,13 +118,14 @@ describe Dkbrpc::Server do
 
   it "sets instance of insecure_methods on each connection" do
     thread = start_reactor
+    connected = false
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
     @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
     EM.schedule do
       @server.start
-      @connection.start
+      @connection.start {connected = true}
     end
-    wait_for{false}
+    wait_for{connected}
     insecure_methods = @server.connections.first.insecure_methods
     stop_reactor(thread)
     insecure_methods.should == Dkbrpc::Default::INSECURE_METHODS
@@ -141,6 +144,7 @@ describe Dkbrpc::Server do
 
   it "makes two overlapping calls" do
     thread = start_reactor
+    connected = false
 
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, TestApi.new)
     @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
@@ -153,9 +157,10 @@ describe Dkbrpc::Server do
         @connection.get_two do |counter|
           counter.should == 2
         end
+        connected = true
       end
     end
-    wait_for{false}
+    wait_for{connected}
     stop_reactor(thread)
   end
 end

@@ -46,15 +46,16 @@ describe "Server Failures" do
     server_errback = blocks[:server_errback]
     client_errback = blocks[:client_errback]
     connected = false
+    errbacked = false
     thread = start_reactor
     EM.schedule do
-      @server.errback {|e| server_errback.call(e) if server_errback }
-      @server.start { |connection| server_block.call(connection) if server_block }
-      @connection1.errback { |e| client_errback.call(e) if client_errback }
-      @connection1.start { client_block.call(@connection1) if client_block; connected = true }
+      @server.errback      { |e| server_errback.call(e) if server_errback; errbacked = true }
+      @server.start        { |connection| server_block.call(connection) if server_block }
+      @connection1.errback { |e| client_errback.call(e) if client_errback; errbacked = true }
+      @connection1.start   { client_block.call(@connection1) if client_block; connected = true }
     end
     wait_for{connected}
-    wait_for{@errback_called}
+    wait_for{errbacked}
     stop_reactor(thread)
   end
 
@@ -90,7 +91,7 @@ describe "Server Failures" do
   it "should call errorback when port is already in use" do
     errback_called = false
     err_message = ""
-  
+
     thread = start_reactor
     EM.run do
       blocked_server = Dkbrpc::Server.new("127.0.0.1", @port, mock("server"))
@@ -112,45 +113,24 @@ describe "Server Failures" do
   end
 
   it "handles no method call on server side" do
-    @errback_called = false
     err_messages = []
     expected_messages = [NO_METHOD_ERROR, CONNECTION_ERROR]
-  
-    client_errback_block = Proc.new do |e|
-      @errback_called = true
-      err_messages << e.message
-    end
-
-    client_block = Proc.new do |connection|
-      connection.not_a_method
-    end
-  
+    client_errback_block = Proc.new { |e| err_messages << e.message }
+    client_block = Proc.new { |connection| connection.not_a_method }
     run_server_failure({:client => client_block, :client_errback => client_errback_block})
-    @errback_called.should be_true
     check_messages(2, err_messages, expected_messages)
   end
 
   it "handles no method call on client side" do
-    @errback_called = false
     err_messages = []
     expected_messages = [NO_METHOD_ERROR, CONNECTION_ERROR, CONNECTION_ERROR]
-
-    server_errback_block = Proc.new do |e|
-      @errback_called = true
-      err_messages << e.message
-    end
-
-    server_block = Proc.new do |connection|
-      connection.not_a_method
-    end
-
+    server_errback_block = Proc.new { |e| err_messages << e.message }
+    server_block = Proc.new { |connection| connection.not_a_method }
     run_server_failure({:server => server_block, :server_errback => server_errback_block})
-    @errback_called.should be_true
     check_messages(3, err_messages, expected_messages)
   end
 
   it "handles insecure method call on server side" do
-    @errback_called = false
     err_messages = []
     expected_messages = [INSECURE_METHOD_ERROR, CONNECTION_ERROR, CONNECTION_ERROR]
 
@@ -161,18 +141,12 @@ describe "Server Failures" do
       end
     end
   
-    client_errback_block = Proc.new do |e|
-      @errback_called = true
-      err_messages << e.message
-    end
-  
+    client_errback_block = Proc.new { |e| err_messages << e.message }
     run_server_failure({:server => client_block, :server_errback => client_errback_block})
-    @errback_called.should be_true
     check_messages(3, err_messages, expected_messages)
   end
   
   it "handles insecure method call on client side" do
-    @errback_called = false
     err_messages = []
     expected_messages = [INSECURE_METHOD_ERROR, CONNECTION_ERROR, CONNECTION_ERROR]
 
@@ -183,23 +157,19 @@ describe "Server Failures" do
       end
     end
 
-    server_errback_block = Proc.new do |e|
-      @errback_called = true
-      err_messages << e.message
-    end
-
+    server_errback_block = Proc.new { |e| err_messages << e.message }
     run_server_failure({:server => server_block, :server_errback => server_errback_block})
-    @errback_called.should be_true
     check_messages(3, err_messages, expected_messages)
   end
 
   it "removes unbinded connection from connections ivar" do
     thread = start_reactor
+    connected = false
     EM.schedule do
       @server.start
-      @connection1.start
+      @connection1.start {connected = true}
     end
-    wait_for{false}
+    wait_for{connected}
     @server.connections.size.times { @server.connections.first.unbind }
     @server.connections.should have(0).items
     stop_reactor(thread)
@@ -207,24 +177,23 @@ describe "Server Failures" do
   
   it "removes one unbinded connection from connections ivar of size two" do
     thread = start_reactor
+    connected = false
     @server.start
     @connection1.start
-    @connection2.start
-    wait_for{false}
+    @connection2.start {connected = true}
+    wait_for{connected}
     2.times { @server.connections.first.unbind }
     @server.connections.should have(2).items
     stop_reactor(thread)
   end
-  
+
   it "does not error out after calling stop twice consecutively" do
     EventMachine.should_receive(:stop_server).once
     thread = start_reactor
-    @server.start
     connected = false
-    @connection1.start do
-      connected = true
-    end
-    wait_for{ connected }
+    @server.start
+    @connection1.start {connected = true}
+    wait_for{connected}
     @server.stop
     @server.stop
     stop_reactor(thread)

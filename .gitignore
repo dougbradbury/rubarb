@@ -3,3 +3,4 @@ pkg
 .idea
 *.iml
 .rakeTasks
+*.gemspec

@@ -47,7 +47,7 @@ describe "Server Failures" do
     client_errback = blocks[:client_errback]
     connected = false
     thread = start_reactor
-    EM.run do
+    EM.schedule do
       @server.errback {|e| server_errback.call(e) if server_errback }
       @server.start { |connection| server_block.call(connection) if server_block }
       @connection1.errback { |e| client_errback.call(e) if client_errback }
@@ -89,16 +89,17 @@ describe "Server Failures" do
   
   it "should call errorback when port is already in use" do
     errback_called = false
+    err_message = ""
   
     thread = start_reactor
     EM.run do
       blocked_server = Dkbrpc::Server.new("127.0.0.1", @port, mock("server"))
-  
+
       blocked_server.errback do |e|
         errback_called = true
         err_message = e.message
       end
-  
+
       @server.start
       blocked_server.start
     end
@@ -109,7 +110,7 @@ describe "Server Failures" do
     errback_called.should be_true
     err_message.include?("acceptor").should be_true
   end
-  
+
   it "handles no method call on server side" do
     @errback_called = false
     err_messages = []
@@ -194,7 +195,7 @@ describe "Server Failures" do
 
   it "removes unbinded connection from connections ivar" do
     thread = start_reactor
-    EM.run do
+    EM.schedule do
       @server.start
       @connection1.start
     end

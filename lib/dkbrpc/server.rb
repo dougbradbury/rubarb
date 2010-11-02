@@ -31,6 +31,12 @@ module Dkbrpc
     def conn_id
       @remote_connection.conn_id
     end
+
+    def stop
+      EventMachine::next_tick do
+        @remote_connection.close_connection
+      end
+    end
   end
 
   class Server

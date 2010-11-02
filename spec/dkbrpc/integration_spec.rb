@@ -152,4 +152,23 @@ describe "Client to Server communication and response" do
     @server_api.conn_id.should == @new_connection_id
   end
 
+  it "should close from server side" do
+    @server_side_client_proxy = nil
+    @server.start do |new_connection|
+      @server_side_client_proxy = new_connection
+    end
+
+    @connection.errback do
+      @client_side_closed = true
+    end
+    @connection.start
+
+    wait_for {!@server_side_client_proxy.nil?}
+    @server_side_client_proxy.stop
+
+    wait_for {@client_side_closed}
+    @client_side_closed.should == true
+    
+  end
+
 end

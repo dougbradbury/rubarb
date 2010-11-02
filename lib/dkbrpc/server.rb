@@ -12,13 +12,13 @@ module Dkbrpc
       @remote_connection = outgoing_connection
     end
 
-    def method_missing(method, *args, &block)
+    def method_missing(method, * args, & block)
       EventMachine::schedule do
-        @remote_connection.remote_call(method, args, &block)
+        @remote_connection.remote_call(method, args, & block)
       end
     end
 
-    def errback(&block)
+    def errback(& block)
       @remote_connection.errbacks << block if block
     end
 
@@ -48,7 +48,7 @@ module Dkbrpc
       @insecure_methods = insecure_methods
     end
 
-    def start(&callback)
+    def start(& callback)
       EventMachine::schedule do
         begin
           @server_signature = EventMachine::start_server(@host, @port, Listener) do |connection|
@@ -68,26 +68,44 @@ module Dkbrpc
       end
     end
 
-    def stop
+
+    def stop(& callback)
       EventMachine::schedule do
-        @connections.each do |connection|
-          connection.close_connection
+        EventMachine::next_tick do
+          close_all_connections
+          stop_server(callback)
         end
-        EventMachine::stop_server(@server_signature)
-      end if @server_signature
-      @server_signature = nil
+      end
     end
-    
-    def errback(&block)
+
+    def errback(& block)
       @errback = block
     end
+
+    private #################################################################################
+    def close_all_connections
+      @connections.each do |connection|
+        connection.close_connection
+      end
+    end
+
+    def stop_server(callback)
+      if @server_signature
+        EventMachine::stop_server(@server_signature)
+        @server_signature = nil
+        callback.call(true) if callback
+      else
+        callback.call(false) if callback
+      end
+    end
+
   end
 
   module Listener
     INCOMING_CONNECTION = "4"[0]
     OUTGOING_CONNECTION = "5"[0]
     attr_accessor :conn_id_generator
-    attr_reader   :conn_id
+    attr_reader :conn_id
     attr_accessor :msg_id_generator
     attr_accessor :api
     attr_accessor :new_connection_callback

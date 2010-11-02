@@ -194,8 +194,15 @@ describe "Server Failures" do
     @server.start
     @connection1.start {connected = true}
     wait_for{connected}
-    @server.stop
-    @server.stop
+    stopped = []
+    @server.stop do |result|
+      stopped << result
+    end
+    @server.stop do |result|
+      stopped << result
+    end
+    wait_for{stopped.size == 2}
+    stopped.should == [true, false]
     stop_reactor(thread)
   end
   

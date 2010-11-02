@@ -8,13 +8,19 @@ require 'dkbrpc/default'
 
 module Dkbrpc
   class ClientProxy
+    attr_reader :remote_connection
+    
     def initialize(outgoing_connection)
       @remote_connection = outgoing_connection
     end
 
     def method_missing(method, * args, & block)
       EventMachine::schedule do
-        @remote_connection.remote_call(method, args, & block)
+        begin
+          @remote_connection.remote_call(method, args, & block)
+        rescue Exception => e
+          @remote_connection.call_errbacks(e)
+        end
       end
     end
 

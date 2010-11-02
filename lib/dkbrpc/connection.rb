@@ -82,13 +82,13 @@ module Dkbrpc
       end
     end
 
-    private
-
     def call_errbacks(message)
       @errbacks.each do |e|
         e.call(message)
       end
     end
+
+    private
 
     def handshake(buffer)
       if complete_id?(buffer)
@@ -140,7 +140,11 @@ module Dkbrpc
 
     def method_missing(method, *args, &block)
       EventMachine::schedule do
-        @remote_connection.remote_call(method, args, &block)
+        begin
+          @remote_connection.remote_call(method, args, &block)
+        rescue Exception => e
+          @remote_connection.call_errbacks(e)
+        end
       end
     end
 

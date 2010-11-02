@@ -61,6 +61,14 @@ end
 
 describe Dkbrpc::Server do
 
+  before(:each) do
+    @reactor_thread = nil
+  end
+  
+  after(:each) do
+    stop_reactor(@reactor_thread) if @reactor_thread
+  end
+
   it "has an instance of Dkbrpc::Id" do
     server = Server.new("host", "port", "api")
     server.conn_id_generator.class.should == Dkbrpc::Id
@@ -85,49 +93,37 @@ describe Dkbrpc::Server do
     server = Server.new("host", "port", "api", [:==, :===, :=~])
     server.insecure_methods.should == [:==, :===, :=~]
   end
-
-  it "sets instance of Dkbrpc::Id to each connection for connection ids" do
-    thread = start_reactor
+  
+  def connect
+    @reactor_thread = start_reactor
     connected = false
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
     @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
     EM.schedule do
-      @server.start
+      @server.start  { |client| @client = client }
       @connection.start {connected = true}
     end
     wait_for{connected}
+  end
+
+  it "sets instance of Dkbrpc::Id to each connection for connection ids" do
+    connect
     generator_class = @server.connections.first.conn_id_generator.class
-    stop_reactor(thread)
+    # stop_reactor(@reactor_thread)
     generator_class.should == Dkbrpc::Id
   end
 
   it "sets instance of Dkbrpc::Id to each connection for message ids" do
-    thread = start_reactor
-    connected = false
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-    EM.schedule do
-      @server.start
-      @connection.start {connected = true}
-    end
-    wait_for{connected}
+    connect
     generator_class = @server.connections.first.msg_id_generator.class
-    stop_reactor(thread)
+    # stop_reactor(@reactor_thread)
     generator_class.should == Dkbrpc::Id
   end
 
   it "sets instance of insecure_methods on each connection" do
-    thread = start_reactor
-    connected = false
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-    EM.schedule do
-      @server.start
-      @connection.start {connected = true}
-    end
-    wait_for{connected}
+    connect
     insecure_methods = @server.connections.first.insecure_methods
-    stop_reactor(thread)
+    # stop_reactor(@reactor_thread)
     insecure_methods.should == Dkbrpc::Default::INSECURE_METHODS
   end
 
@@ -143,7 +139,7 @@ describe Dkbrpc::Server do
   end
 
   it "makes two overlapping calls" do
-    thread = start_reactor
+    @reactor_thread = start_reactor
     connected = false
 
     @server = Dkbrpc::Server.new("127.0.0.1", 9441, TestApi.new)
@@ -161,7 +157,19 @@ describe Dkbrpc::Server do
       end
     end
     wait_for{connected}
-    stop_reactor(thread)
+  end
+  
+  it "catches exceptions that occur during a remote call to client" do
+    connect
+    error = nil
+    @client.remote_connection.errbacks << lambda { |e| error = e }
+    @client.remote_connection.should_receive(:remote_call).and_raise("Blah")
+    
+    @client.foo
+    wait_for { error != nil }
+       
+    error.to_s.should == "Blah"
+    EM.reactor_running?.should == true
   end
 end
 

@@ -33,15 +33,20 @@ describe Dkbrpc::Connection do
   end
 
   describe "with client and server connected" do
+    
+    def connect(connection)
+      connected = false
+      connection.start do
+        connected = true
+      end
+      wait_for { connected }
+      return connection
+    end
+    
     before(:all) do
       @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-      @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
       @server.start
-      @connected = false
-      @connection.start do
-        @connected = true
-      end
-      wait_for { @connected }
+      @connection = connect(Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client")))
     end
 
     it "sets an instance of Dkbrpc::Id to remote_connection" do
@@ -57,22 +62,12 @@ describe Dkbrpc::Connection do
     end
 
     it "can accept custom insecure methods" do
-      connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"), CUSTOM_INSECURE_METHODS)
-      connected = false
-      connection.start do
-        connected = true
-      end
-      wait_for { connected }
+      connection = connect(Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"), CUSTOM_INSECURE_METHODS))
       connection.remote_connection.insecure_methods.should == CUSTOM_INSECURE_METHODS
     end
 
     it "should stop after it's connected" do
-      connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-      connected = false
-      connection.start do
-        connected = true
-      end
-      wait_for { connected }
+      connection = connect(Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client")))
 
       @result = "boo"
       connection.stop do |result|
@@ -80,9 +75,20 @@ describe Dkbrpc::Connection do
       end
       wait_for{@result == true}
       @result.should == true
-
     end
 
+    it "doesn't exit the reactor loop when an exception occurs in Connection::method_missing" do
+      connection = connect(Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client")))
+      error = nil
+      connection.errback {|e| error = e}
+      connection.remote_connection.should_receive(:remote_call).and_raise("Blah")
+      
+      connection.foo
+      wait_for{error != nil}
+      
+      error.to_s.should == "Blah"
+      EM.reactor_running?.should == true
+    end
 
   end
 

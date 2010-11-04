@@ -1,4 +1,4 @@
-module Dkbrpc
+module Rubarb
   class Responder
     attr_reader :message_id
     attr_reader :handler

@@ -1,11 +1,11 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
-require 'dkbrpc/server'
-require "dkbrpc/connection"
-require "dkbrpc/remote_call"
-require "dkbrpc/default"
+require 'rubarb/server'
+require "rubarb/connection"
+require "rubarb/remote_call"
+require "rubarb/default"
 
-describe Dkbrpc::Connection do
+describe Rubarb::Connection do
   CUSTOM_INSECURE_METHODS = [:==, :===, :=~]
 
   before(:all) do
@@ -16,14 +16,14 @@ describe Dkbrpc::Connection do
     stop_reactor(@reactor)
   end
 
-  it "has an instance of Dkbrpc::Id" do
-    @connection = Dkbrpc::Connection.new("host", "port", "api")
-    @connection.msg_id_generator.class.should == Dkbrpc::Id
+  it "has an instance of Rubarb::Id" do
+    @connection = Rubarb::Connection.new("host", "port", "api")
+    @connection.msg_id_generator.class.should == Rubarb::Id
   end
 
   it "should stop" do
     @result = "blah"
-    @connection = Dkbrpc::Connection.new("host", "port", "api")
+    @connection = Rubarb::Connection.new("host", "port", "api")
     @connection.stop do |result|
       @result = result
     end
@@ -44,13 +44,13 @@ describe Dkbrpc::Connection do
     end
     
     before(:all) do
-      @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
+      @server = Rubarb::Server.new("127.0.0.1", 9441, mock("server"))
       @server.start
-      @connection = connect(Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client")))
+      @connection = connect(Rubarb::Connection.new("127.0.0.1", 9441, mock("client")))
     end
 
-    it "sets an instance of Dkbrpc::Id to remote_connection" do
-      @connection.remote_connection.msg_id_generator.class.should == Dkbrpc::Id
+    it "sets an instance of Rubarb::Id to remote_connection" do
+      @connection.remote_connection.msg_id_generator.class.should == Rubarb::Id
     end
 
     it "sets an instance of insecure_methods to remote_connection" do
@@ -58,16 +58,16 @@ describe Dkbrpc::Connection do
     end
 
     it "has default insecure methods" do
-      @connection.remote_connection.insecure_methods.should == Dkbrpc::Default::INSECURE_METHODS
+      @connection.remote_connection.insecure_methods.should == Rubarb::Default::INSECURE_METHODS
     end
 
     it "can accept custom insecure methods" do
-      connection = connect(Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"), CUSTOM_INSECURE_METHODS))
+      connection = connect(Rubarb::Connection.new("127.0.0.1", 9441, mock("client"), CUSTOM_INSECURE_METHODS))
       connection.remote_connection.insecure_methods.should == CUSTOM_INSECURE_METHODS
     end
 
     it "should stop after it's connected" do
-      connection = connect(Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client")))
+      connection = connect(Rubarb::Connection.new("127.0.0.1", 9441, mock("client")))
 
       @result = "boo"
       connection.stop do |result|
@@ -78,7 +78,7 @@ describe Dkbrpc::Connection do
     end
 
     it "doesn't exit the reactor loop when an exception occurs in Connection::method_missing" do
-      connection = connect(Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client")))
+      connection = connect(Rubarb::Connection.new("127.0.0.1", 9441, mock("client")))
       error = nil
       connection.errback {|e| error = e}
       connection.remote_connection.should_receive(:remote_call).and_raise("Blah")
@@ -91,7 +91,7 @@ describe Dkbrpc::Connection do
     end
 
     it "should catch exceptions from connect" do
-      connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+      connection = Rubarb::Connection.new("127.0.0.1", 9441, mock("client"))
       EventMachine.stub!(:connect).and_raise("Internal Java error")
       errback_called = false
       connection.errback do |e|
@@ -108,9 +108,9 @@ describe Dkbrpc::Connection do
 
 end
 
-describe Dkbrpc::OutgoingHandler do
-  include Dkbrpc::OutgoingHandler
-  include Dkbrpc::RemoteCall
+describe Rubarb::OutgoingHandler do
+  include Rubarb::OutgoingHandler
+  include Rubarb::RemoteCall
 
   before(:each) do
     @sent_data = ""
@@ -129,7 +129,7 @@ describe Dkbrpc::OutgoingHandler do
     connection_completed
     @host = "1.2.3.4"
     @port = 2321
-    EventMachine.should_receive(:connect).with("1.2.3.4", 2321, Dkbrpc::IncomingHandler)
+    EventMachine.should_receive(:connect).with("1.2.3.4", 2321, Rubarb::IncomingHandler)
     receive_data("0000")
     receive_data("0001")
   end
@@ -146,8 +146,8 @@ describe Dkbrpc::OutgoingHandler do
   end
 end
 
-describe Dkbrpc::IncomingHandler do
-  include Dkbrpc::IncomingHandler
+describe Rubarb::IncomingHandler do
+  include Rubarb::IncomingHandler
 
   before(:each) do
     @sent_data = ""

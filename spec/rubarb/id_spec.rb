@@ -1,7 +1,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-require 'dkbrpc/id'
+require 'rubarb/id'
 
-include Dkbrpc
+include Rubarb
 
 describe Id do
 

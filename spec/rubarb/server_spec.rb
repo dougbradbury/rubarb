@@ -1,10 +1,10 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-require 'dkbrpc/server'
-require "dkbrpc/remote_call"
-require 'dkbrpc/connection'
-require 'dkbrpc/default'
+require 'rubarb/server'
+require "rubarb/remote_call"
+require 'rubarb/connection'
+require 'rubarb/default'
 
-include Dkbrpc
+include Rubarb
 
 describe Listener do
   include RemoteCall
@@ -60,7 +60,7 @@ describe Listener do
   end
 end
 
-describe Dkbrpc::Server do
+describe Rubarb::Server do
 
   before(:each) do
     @reactor_thread = nil
@@ -70,14 +70,14 @@ describe Dkbrpc::Server do
     stop_reactor(@reactor_thread) if @reactor_thread
   end
 
-  it "has an instance of Dkbrpc::Id" do
+  it "has an instance of Rubarb::Id" do
     server = Server.new("host", "port", "api")
-    server.conn_id_generator.class.should == Dkbrpc::Id
+    server.conn_id_generator.class.should == Rubarb::Id
   end
 
-  it "has an instance of Dkbrpc::Id for message ids" do
+  it "has an instance of Rubarb::Id for message ids" do
     server = Server.new("host", "port", "api")
-    server.msg_id_generator.class.should == Dkbrpc::Id
+    server.msg_id_generator.class.should == Rubarb::Id
   end
 
   it "has an instance of insecure_methods" do
@@ -87,7 +87,7 @@ describe Dkbrpc::Server do
 
   it "has default insecure_methods" do
     server = Server.new("host", "port", "api")
-    server.insecure_methods.should == Dkbrpc::Default::INSECURE_METHODS
+    server.insecure_methods.should == Rubarb::Default::INSECURE_METHODS
   end
 
   it "accepts custom insecure methods on initilization" do
@@ -98,8 +98,8 @@ describe Dkbrpc::Server do
   def connect
     @reactor_thread = start_reactor
     connected = false
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    @server = Rubarb::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection = Rubarb::Connection.new("127.0.0.1", 9441, mock("client"))
     EM.schedule do
       @server.start { |client| @client = client }
       @connection.start { connected = true }
@@ -107,22 +107,22 @@ describe Dkbrpc::Server do
     wait_for { connected }
   end
 
-  it "sets instance of Dkbrpc::Id to each connection for connection ids" do
+  it "sets instance of Rubarb::Id to each connection for connection ids" do
     connect
     generator_class = @server.connections.first.conn_id_generator.class
-    generator_class.should == Dkbrpc::Id
+    generator_class.should == Rubarb::Id
   end
 
-  it "sets instance of Dkbrpc::Id to each connection for message ids" do
+  it "sets instance of Rubarb::Id to each connection for message ids" do
     connect
     generator_class = @server.connections.first.msg_id_generator.class
-    generator_class.should == Dkbrpc::Id
+    generator_class.should == Rubarb::Id
   end
 
   it "sets instance of insecure_methods on each connection" do
     connect
     insecure_methods = @server.connections.first.insecure_methods
-    insecure_methods.should == Dkbrpc::Default::INSECURE_METHODS
+    insecure_methods.should == Rubarb::Default::INSECURE_METHODS
   end
 
   it "makes sure @conn_id_generator#next is called in handle_incoming" do
@@ -140,8 +140,8 @@ describe Dkbrpc::Server do
     @reactor_thread = start_reactor
     connected = false
 
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, TestApi.new)
-    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    @server = Rubarb::Server.new("127.0.0.1", 9441, TestApi.new)
+    @connection = Rubarb::Connection.new("127.0.0.1", 9441, mock("client"))
     EM.run do
       @server.start
       @connection.start do
@@ -176,7 +176,7 @@ describe Dkbrpc::Server do
     @reactor_thread = start_reactor
     done = false
 
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, TestApi.new)
+    @server = Rubarb::Server.new("127.0.0.1", 9441, TestApi.new)
     @server.errback do |error|
       error.message.should == "EMReactor Exception"
       done = true

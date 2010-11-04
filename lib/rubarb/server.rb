@@ -1,12 +1,12 @@
 require 'eventmachine'
-require 'dkbrpc/connection_id'
-require "dkbrpc/fast_message_protocol"
-require 'dkbrpc/outgoing_connection'
-require 'dkbrpc/incoming_connection'
-require 'dkbrpc/id'
-require 'dkbrpc/default'
+require 'rubarb/connection_id'
+require "rubarb/fast_message_protocol"
+require 'rubarb/outgoing_connection'
+require 'rubarb/incoming_connection'
+require 'rubarb/id'
+require 'rubarb/default'
 
-module Dkbrpc
+module Rubarb
   class ClientProxy
     attr_reader :remote_connection
     
@@ -179,7 +179,7 @@ module Dkbrpc
     end
 
     def switch_protocol
-      Dkbrpc::FastMessageProtocol.install(self)
+      Rubarb::FastMessageProtocol.install(self)
     end
   end
 end

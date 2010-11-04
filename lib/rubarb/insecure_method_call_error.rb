@@ -1,4 +1,4 @@
-module Dkbrpc
+module Rubarb
   class InsecureMethodCallError < StandardError
     def initialize(method="")
       @method = method

@@ -1,7 +1,7 @@
 $: << File.expand_path(File.dirname(__FILE__) + '/../lib')
 #$DEBUG = true
 require 'rubygems'
-require 'dkbrpc'
+require 'rubarb'
 
 
 class ServerApi
@@ -12,7 +12,7 @@ class ServerApi
 end
 
 EM.run do
-  server = Dkbrpc::Server.new("127.0.0.1", 9441, ServerApi.new)
+  server = Rubarb::Server.new("127.0.0.1", 9441, ServerApi.new)
 
   connections = {}
 

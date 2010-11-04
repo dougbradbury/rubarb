@@ -1,4 +1,4 @@
-module Dkbrpc
+module Rubarb
   class ConnectionError < StandardError
     def initialize(message = "Connection Failure")
       @message = message

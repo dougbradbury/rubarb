@@ -1,12 +1,12 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
-require "dkbrpc/incoming_connection"
-require "dkbrpc/remote_call"
-require "dkbrpc/default"
+require "rubarb/incoming_connection"
+require "rubarb/remote_call"
+require "rubarb/default"
 
-describe Dkbrpc::IncomingConnection do
-  include Dkbrpc::RemoteCall
-  include Dkbrpc::IncomingConnection
+describe Rubarb::IncomingConnection do
+  include Rubarb::RemoteCall
+  include Rubarb::IncomingConnection
   attr_reader :api
 
   class TestApi
@@ -20,7 +20,7 @@ describe Dkbrpc::IncomingConnection do
 
   before(:each) do
     @api = TestApi.new
-    @insecure_methods = Dkbrpc::Default::INSECURE_METHODS
+    @insecure_methods = Rubarb::Default::INSECURE_METHODS
   end
 
   it "should receive message" do
@@ -52,7 +52,7 @@ describe Dkbrpc::IncomingConnection do
   end
 
   it "blocks any insecure method in receive_message" do
-    Dkbrpc::Default::INSECURE_METHODS.each do |method|
+    Rubarb::Default::INSECURE_METHODS.each do |method|
       blocks_method_in_receive_message(method)
     end
   end

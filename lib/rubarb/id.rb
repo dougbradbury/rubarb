@@ -1,4 +1,4 @@
-module Dkbrpc
+module Rubarb
   class Id
     def initialize
       @id ||= 1

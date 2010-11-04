@@ -1,6 +1,6 @@
-require 'dkbrpc/server'
-require 'dkbrpc/connection'
-require 'dkbrpc/insecure_method_call_error'
+require 'rubarb/server'
+require 'rubarb/connection'
+require 'rubarb/insecure_method_call_error'
 require 'socket'
 
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
@@ -16,9 +16,9 @@ describe "Server Failures" do
   end
 
   before(:each) do
-    @server = Dkbrpc::Server.new("127.0.0.1", @port, mock("server"))
-    @connection1 = Dkbrpc::Connection.new("127.0.0.1", @port, mock("client"))
-    @connection2 = Dkbrpc::Connection.new("127.0.0.1", @port, mock("client"))
+    @server = Rubarb::Server.new("127.0.0.1", @port, mock("server"))
+    @connection1 = Rubarb::Connection.new("127.0.0.1", @port, mock("client"))
+    @connection2 = Rubarb::Connection.new("127.0.0.1", @port, mock("client"))
   end
 
   def wait_for_connections(n, ttl, &block)
@@ -94,7 +94,7 @@ describe "Server Failures" do
 
     thread = start_reactor
     EM.run do
-      blocked_server = Dkbrpc::Server.new("127.0.0.1", @port, mock("server"))
+      blocked_server = Rubarb::Server.new("127.0.0.1", @port, mock("server"))
 
       blocked_server.errback do |e|
         errback_called = true

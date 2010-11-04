@@ -1,7 +1,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
-require 'dkbrpc/server'
-require 'dkbrpc/connection'
+require 'rubarb/server'
+require 'rubarb/connection'
 
 describe "Server to Client communication and response" do
 
@@ -16,8 +16,8 @@ describe "Server to Client communication and response" do
     @server_api = mock("server")
     @client_api = TestClientApi.new
 
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, @server_api)
-    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, @client_api)
+    @server = Rubarb::Server.new("127.0.0.1", 9441, @server_api)
+    @connection = Rubarb::Connection.new("127.0.0.1", 9441, @client_api)
   end
 
   after(:each) do
@@ -78,8 +78,8 @@ describe "Client to Server communication and response" do
     @server_api = TestServerApi.new
     @client_api = mock("client")
 
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, @server_api)
-    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, @client_api)
+    @server = Rubarb::Server.new("127.0.0.1", 9441, @server_api)
+    @connection = Rubarb::Connection.new("127.0.0.1", 9441, @client_api)
   end
 
   after(:each) do

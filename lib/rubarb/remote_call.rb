@@ -1,4 +1,4 @@
-module Dkbrpc
+module Rubarb
   module RemoteCall
     def marshal_call(*args)
       Marshal::dump(args)

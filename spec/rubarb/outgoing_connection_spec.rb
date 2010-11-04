@@ -1,11 +1,11 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
-require "dkbrpc/outgoing_connection"
-require "dkbrpc/remote_call"
+require "rubarb/outgoing_connection"
+require "rubarb/remote_call"
 
-describe Dkbrpc::OutgoingConnection do
-  include Dkbrpc::RemoteCall
-  include Dkbrpc::OutgoingConnection
+describe Rubarb::OutgoingConnection do
+  include Rubarb::RemoteCall
+  include Rubarb::OutgoingConnection
 
   before(:each) do
     @callback = {}

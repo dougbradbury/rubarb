@@ -1,8 +1,8 @@
-require "dkbrpc/remote_call"
-require "dkbrpc/responder"
-require "dkbrpc/insecure_method_call_error"
+require "rubarb/remote_call"
+require "rubarb/responder"
+require "rubarb/insecure_method_call_error"
 
-module Dkbrpc
+module Rubarb
 
   module IncomingConnection
     include RemoteCall
@@ -11,7 +11,7 @@ module Dkbrpc
       id, method, args = unmarshal_call(message)
       responder = Responder.new(self, id)
       begin
-        raise Dkbrpc::InsecureMethodCallError.new(method) if @insecure_methods.include?(method)
+        raise Rubarb::InsecureMethodCallError.new(method) if @insecure_methods.include?(method)
         api.send(method, *[responder, *args]);
       rescue Exception => e
         reply("0", e)

@@ -1,6 +1,6 @@
-require "dkbrpc/remote_call"
+require "rubarb/remote_call"
 
-module Dkbrpc
+module Rubarb
   module OutgoingConnection
     include RemoteCall
 

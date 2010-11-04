@@ -1,4 +1,4 @@
-module Dkbrpc
+module Rubarb
   module Default
     INSECURE_METHODS = [:==, :===, :=~, :__drbref, :__drburi, :__id__, :__send__, :_dump,
     :class, :clone, :display, :dup, :enum_for, :eql?, :equal?, :extend, :freeze,

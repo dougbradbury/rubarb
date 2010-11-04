@@ -1,7 +1,7 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
-require 'dkbrpc/server'
-require 'dkbrpc/connection'
+require 'rubarb/server'
+require 'rubarb/connection'
 
 describe "Connection Failures" do
 
@@ -14,12 +14,12 @@ describe "Connection Failures" do
   end
   
   it "should fail to connect" do
-    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client api"))
+    @connection = Rubarb::Connection.new("127.0.0.1", 9441, mock("client api"))
 
     @errback_called = false
     @connection.errback do |error|
       @errback_called = true
-      error.class.should == Dkbrpc::ConnectionError
+      error.class.should == Rubarb::ConnectionError
       error.message.should == "Connection Failure"
     end
 
@@ -35,23 +35,23 @@ describe "Connection Failures" do
   end
 
   it "should fail after it has connected" do
-    @server = Dkbrpc::Server.new("127.0.0.1", 9441, mock("server"))
-    @connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
-    @connection2 = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+    @server = Rubarb::Server.new("127.0.0.1", 9441, mock("server"))
+    @connection = Rubarb::Connection.new("127.0.0.1", 9441, mock("client"))
+    @connection2 = Rubarb::Connection.new("127.0.0.1", 9441, mock("client"))
 
     @server.start
 
     @errback_called = false
     @connection.errback do |error|
       @errback_called = true
-      error.class.should == Dkbrpc::ConnectionError
+      error.class.should == Rubarb::ConnectionError
       error.message.should == "Connection Failure"
     end
 
     @errback2_called = false
     @connection2.errback do |error|
       @errback2_called = true
-      error.class.should == Dkbrpc::ConnectionError
+      error.class.should == Rubarb::ConnectionError
       error.message.should == "Connection Failure"
     end
 

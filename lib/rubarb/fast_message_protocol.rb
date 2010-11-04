@@ -1,11 +1,11 @@
-module Dkbrpc
+module Rubarb
   # Receives data with a 4-byte integer size prefix (network byte order).
   # Underlying protocol must implement #send_data and invoke #receive_data.
   # User's protocol must call #send_message and listen to #receive_message callback.
   module FastMessageProtocol
 
     def self.install(object)
-      object.extend Dkbrpc::FastMessageProtocol
+      object.extend Rubarb::FastMessageProtocol
       object.post_init
     end
 

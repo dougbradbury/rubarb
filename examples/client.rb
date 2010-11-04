@@ -1,6 +1,6 @@
 $: << File.expand_path(File.dirname(__FILE__) + '/../lib')
 require 'rubygems'
-require 'dkbrpc'
+require 'rubarb'
 
 class ClientApi
   def initialize(name)
@@ -12,11 +12,11 @@ class ClientApi
 end
 
 EM::run do
-  connection = Dkbrpc::Connection.new("127.0.0.1", 9441, ClientApi.new(ARGV[0]))
+  connection = Rubarb::Connection.new("127.0.0.1", 9441, ClientApi.new(ARGV[0]))
   connection.errback do |error|
     puts ("Connection Error:  #{error}")
   end
-  
+
   connection.start do
     connection.time do |response|
       puts "Server Said it is:  #{response.strftime("%D")}"

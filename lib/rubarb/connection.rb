@@ -1,12 +1,12 @@
-require "dkbrpc/connection_id"
-require "dkbrpc/fast_message_protocol"
-require "dkbrpc/remote_call"
-require 'dkbrpc/outgoing_connection'
-require 'dkbrpc/incoming_connection'
-require 'dkbrpc/connection_error'
-require 'dkbrpc/default'
+require "rubarb/connection_id"
+require "rubarb/fast_message_protocol"
+require "rubarb/remote_call"
+require 'rubarb/outgoing_connection'
+require 'rubarb/incoming_connection'
+require 'rubarb/connection_error'
+require 'rubarb/default'
 
-module Dkbrpc
+module Rubarb
   module IncomingHandler
     include ConnectionId
 
@@ -21,14 +21,14 @@ module Dkbrpc
     end
 
     def connection_completed
-      Dkbrpc::FastMessageProtocol.install(self)
+      Rubarb::FastMessageProtocol.install(self)
       send_data("5")
       send_data(@id)
     end
 
     def receive_message message
       if (message == @id)
-        self.extend(Dkbrpc::IncomingConnection)
+        self.extend(Rubarb::IncomingConnection)
         @on_connection.call if @on_connection
       else
         call_errbacks(ConnectionError.new("Handshake Failure"))
@@ -92,7 +92,7 @@ module Dkbrpc
 
     def handshake(buffer)
       if complete_id?(buffer)
-        Dkbrpc::FastMessageProtocol.install(self)
+        Rubarb::FastMessageProtocol.install(self)
         EventMachine::connect(@host, @port, IncomingHandler) do |incoming_connection|
           @id = extract_id(buffer)
           incoming_connection.id = @id

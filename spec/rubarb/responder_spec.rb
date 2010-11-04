@@ -1,9 +1,9 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-require "dkbrpc/responder"
-require "dkbrpc/incoming_connection"
-require "dkbrpc/server"
+require "rubarb/responder"
+require "rubarb/incoming_connection"
+require "rubarb/server"
 
-include Dkbrpc
+include Rubarb
 
 class MockHandler
   include Listener

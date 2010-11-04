@@ -1,8 +1,8 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
-require 'dkbrpc/remote_call'
-describe Dkbrpc::RemoteCall do
-  include Dkbrpc::RemoteCall
+require 'rubarb/remote_call'
+describe Rubarb::RemoteCall do
+  include Rubarb::RemoteCall
 
   it "should marshal a call" do
     identity_test(:foo, "barr", "none")

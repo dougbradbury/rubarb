@@ -1,17 +1,18 @@
 rubaRb
 A Bidirectional Event Machine Based Remote Procedure Call Library for Ruby
 
-This library uses two socket connections between a client and a server. One is used for request / replies from the
-client to the server.  The other is used for remote calls made from the server to the client.
+This library uses two socket connections between a client and a server.
+One is used for request / replies from the client to the server.
+The other is used for remote calls made from the server to the client.
 
-Each end publishes a single object on which
-methods can be called by the remote end.  All calls to the remote objects are asyncronous.  Do not make any blocking
-calls in the published object.  Responses are return by calling the "reply method on the responder object.
+Each end publishes a single object on which methods can be called by the remote end.
+All calls to the remote objects are asyncronous.  Do not make any blocking calls in
+the published object.  Responses are return by calling the "reply method on the responder object.
 
-Server and Connection object may be created and started outside of EM::run, but the Eventmachine reactor must be started
-somewhere in your application
+Server and Connection object may be created and started outside of EM::run,
+but the Eventmachine reactor must be started somewhere in your application
 
-################################# Server Example #######################################################################
+################################# Server Example #####################################################################
 
 class ServerApi
   def time(responder)
@@ -41,10 +42,10 @@ EM.run do
   EventMachine.add_periodic_timer(1) { puts "Connections:  #{connections.keys.inspect}" }
 
 end
-########################################################################################################################
+######################################################################################################################
 
 
-################################# Client Example #######################################################################
+################################# Client Example #####################################################################
 class ClientApi
   def initialize(name)
     @name = name
@@ -73,4 +74,4 @@ EM::run do
   end
 
 end
-########################################################################################################################
+######################################################################################################################

@@ -107,8 +107,8 @@ module Dkbrpc
   end
 
   class Connection
-    attr_reader   :remote_connection
-    attr_reader   :msg_id_generator
+    attr_reader :remote_connection
+    attr_reader :msg_id_generator
 
     def initialize(host, port, api, insecure_methods=Default::INSECURE_METHODS)
       @host = host
@@ -119,29 +119,35 @@ module Dkbrpc
       @insecure_methods = insecure_methods
     end
 
-    def errback &block
+    def errback & block
       @errbacks << block if block
     end
 
-    def start &block
+    def start & block
       EventMachine::schedule do
-        EventMachine::connect(@host, @port, OutgoingHandler) do |connection|
-          connection.host = @host
-          connection.port = @port
-          connection.on_connection = block
-          connection.api = @api
-          connection.errbacks = @errbacks
-          connection.msg_id_generator = @msg_id_generator
-          connection.insecure_methods = @insecure_methods
-          @remote_connection = connection
+        begin
+          EventMachine::connect(@host, @port, OutgoingHandler) do |connection|
+            connection.host = @host
+            connection.port = @port
+            connection.on_connection = block
+            connection.api = @api
+            connection.errbacks = @errbacks
+            connection.msg_id_generator = @msg_id_generator
+            connection.insecure_methods = @insecure_methods
+            @remote_connection = connection
+          end
+        rescue Exception => e
+          @errbacks.each do |errback|
+            errback.call(e)
+          end
         end
       end
     end
 
-    def method_missing(method, *args, &block)
+    def method_missing(method, * args, & block)
       EventMachine::schedule do
         begin
-          @remote_connection.remote_call(method, args, &block)
+          @remote_connection.remote_call(method, args, & block)
         rescue Exception => e
           @remote_connection.call_errbacks(e)
         end

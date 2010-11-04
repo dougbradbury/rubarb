@@ -90,6 +90,20 @@ describe Dkbrpc::Connection do
       EM.reactor_running?.should == true
     end
 
+    it "should catch exceptions from connect" do
+      connection = Dkbrpc::Connection.new("127.0.0.1", 9441, mock("client"))
+      EventMachine.stub!(:connect).and_raise("Internal Java error")
+      errback_called = false
+      connection.errback do |e|
+        e.message.should == "Internal Java error"
+        errback_called = true
+      end
+      connection.start
+
+      wait_for{errback_called}
+      
+    end
+
   end
 
 end

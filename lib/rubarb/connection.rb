@@ -15,6 +15,7 @@ module Rubarb
     attr_accessor :api
     attr_accessor :errbacks
     attr_accessor :insecure_methods
+    attr_accessor :outgoing_connection
 
     def post_init
       @buffer = ""
@@ -36,6 +37,7 @@ module Rubarb
     end
 
     def unbind
+      EM::next_tick {@outgoing_connection.close_connection} if @outgoing_connection
       call_errbacks(ConnectionError.new)
     end
 
@@ -100,6 +102,7 @@ module Rubarb
           incoming_connection.api = @api
           incoming_connection.errbacks = @errbacks
           incoming_connection.insecure_methods = @insecure_methods
+          incoming_connection.outgoing_connection = self
           @incoming_connection = incoming_connection
         end
       end

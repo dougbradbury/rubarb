@@ -171,4 +171,33 @@ describe "Client to Server communication and response" do
     
   end
 
+  it "should close one of the connections" do
+    @server_side_client_proxy = nil
+    @client_side_closed = 0
+    @server.start do |new_connection|
+      @server_side_client_proxy = new_connection
+    end
+
+    @connection.errback do
+      @client_side_closed += 1
+    end    
+    @connection.start
+
+    wait_for {!@server_side_client_proxy.nil?}
+    EM::next_tick {@server.connections[1].close_connection}
+
+    wait_for {@client_side_closed >= 1}
+    @client_side_closed.should == 1
+
+    @server_api.stub!(:foo) do |responder|
+      puts "Got foo"
+      responder.reply("bar")
+    end
+    @connection.foo do |result|
+      @foobar = result
+    end
+    sleep(3)
+    @foobar.should_not == "bar"
+  end
+
 end

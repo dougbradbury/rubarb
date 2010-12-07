@@ -46,7 +46,7 @@ module Rubarb
     end
 
     def force_close_connection
-      close_connection
+      close_connection_after_writing
     end
 
   end
@@ -96,7 +96,7 @@ module Rubarb
 
     def force_close_connection
       @incoming_connection = nil
-      close_connection
+      close_connection_after_writing
     end
 
 
@@ -170,7 +170,7 @@ module Rubarb
       EventMachine::schedule do
         if @remote_connection
           EventMachine::next_tick do
-            @remote_connection.close_connection
+            @remote_connection.close_connection_after_writing
             callback.call(true) if callback
           end
         else

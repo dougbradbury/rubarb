@@ -34,7 +34,7 @@ module Rubarb
 
     def stop
       EventMachine::next_tick do
-        @remote_connection.close_connection
+        @remote_connection.close_connection_after_writing
       end
     end
   end
@@ -97,7 +97,7 @@ module Rubarb
     private #################################################################################
     def close_all_connections
       @connections.each do |connection|
-        connection.close_connection
+        connection.close_connection_after_writing
       end
     end
 

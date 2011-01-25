@@ -62,12 +62,8 @@ end
 
 describe Rubarb::Server do
 
-  before(:each) do
-    @reactor_thread = nil
-  end
-
   after(:each) do
-    stop_reactor(@reactor_thread) if @reactor_thread
+    sync_stop(@server)
   end
 
   it "has an instance of Rubarb::Id" do
@@ -96,7 +92,6 @@ describe Rubarb::Server do
   end
 
   def connect
-    @reactor_thread = start_reactor
     connected = false
     @server = Rubarb::Server.new("127.0.0.1", 9441, mock("server"))
     @connection = Rubarb::Connection.new("127.0.0.1", 9441, mock("client"))
@@ -104,7 +99,7 @@ describe Rubarb::Server do
       @server.start { |client| @client = client }
       EM.next_tick {@connection.start { connected = true } }
     end
-    wait_for { connected }
+    wait_for { connected && @client}
     connected.should == true
   end
 
@@ -138,7 +133,6 @@ describe Rubarb::Server do
   end
 
   it "makes two overlapping calls" do
-    @reactor_thread = start_reactor
     connected = false
 
     @server = Rubarb::Server.new("127.0.0.1", 9441, TestApi.new)
@@ -174,7 +168,6 @@ describe Rubarb::Server do
   it "should catch exceptions in starting server" do
     EventMachine.stub!(:start_server).and_raise("EMReactor Exception")
 
-    @reactor_thread = start_reactor
     done = false
 
     @server = Rubarb::Server.new("127.0.0.1", 9441, TestApi.new)

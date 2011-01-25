@@ -36,10 +36,17 @@ def wait_for
   rescue Timeout::Error => e
 end
 
+def sync_stop(server)
+  return unless server
+  stopped = false
+  server.stop { stopped = true }
+  wait_for { stopped }
+end
+
 
 Spec::Runner.configure do |config|
-  config.before(:all) { @reactor = start_reactor}
-  config.after(:all) {stop_reactor(@reactor)}
+  config.before(:suite) {$reactor_thread = start_reactor}
+  config.after(:suite) {stop_reactor($reactor_thread)}
 end
 
 

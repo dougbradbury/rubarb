@@ -8,14 +8,6 @@ require "rubarb/default"
 describe Rubarb::Connection do
   CUSTOM_INSECURE_METHODS = [:==, :===, :=~]
 
-  before(:all) do
-    @reactor = start_reactor
-  end
-
-  after(:all) do
-    stop_reactor(@reactor)
-  end
-
   it "has an instance of Rubarb::Id" do
     @connection = Rubarb::Connection.new("host", "port", "api")
     @connection.msg_id_generator.class.should == Rubarb::Id
@@ -47,6 +39,10 @@ describe Rubarb::Connection do
       @server = Rubarb::Server.new("127.0.0.1", 9441, mock("server"))
       @server.start
       @connection = connect(Rubarb::Connection.new("127.0.0.1", 9441, mock("client")))
+    end
+
+    after(:each) do
+      sync_stop(@server)
     end
 
     it "sets an instance of Rubarb::Id to remote_connection" do

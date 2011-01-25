@@ -12,7 +12,6 @@ describe "Server to Client communication and response" do
   end
 
   before(:each) do
-    @reactor = start_reactor
     @server_api = mock("server")
     @client_api = TestClientApi.new
 
@@ -21,7 +20,7 @@ describe "Server to Client communication and response" do
   end
 
   after(:each) do
-    stop_reactor(@reactor)
+    sync_stop(@server)
   end
 
   it "should communicate with the client" do
@@ -74,7 +73,6 @@ describe "Client to Server communication and response" do
   end
 
   before(:each) do
-    @reactor = start_reactor
     @server_api = TestServerApi.new
     @client_api = mock("client")
 
@@ -83,7 +81,7 @@ describe "Client to Server communication and response" do
   end
 
   after(:each) do
-    stop_reactor(@reactor)
+    sync_stop(@server)
   end
 
   it "without a callback" do

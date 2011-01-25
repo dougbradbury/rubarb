@@ -5,14 +5,6 @@ require 'rubarb/connection'
 
 describe "Connection Failures" do
 
-  before(:each) do
-    @reactor = start_reactor
-  end
-
-  after(:each) do
-    stop_reactor(@reactor)
-  end
-  
   it "should fail to connect" do
     @connection = Rubarb::Connection.new("127.0.0.1", 9441, mock("client api"))
 

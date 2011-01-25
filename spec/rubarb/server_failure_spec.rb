@@ -204,7 +204,7 @@ describe "Server Failures" do
 
 
   it "should handle the loss of a client" do
-    pending
+    pending "messes with Reactor running for all other tests"
     EM.run do
       @cons = 0
       @server.start do |client|
@@ -227,14 +227,14 @@ describe "Server Failures" do
         @connection1.stop
         wait_for_connections(1, 10) do
           @cons.should == 1
-          @server.stop
+          EM.stop
         end
       end
     end
   end
 
   it "should call errorback when port is already in use" do
-    pending
+    pending "hangs on occasion"
     errback_called = false
     err_message = ""
 

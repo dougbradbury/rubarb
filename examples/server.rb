@@ -12,7 +12,7 @@ class ServerApi
 end
 
 EM.run do
-  server = Rubarb::Server.new("127.0.0.1", 9441, ServerApi.new)
+  server = Rubarb::Server.new("127.0.0.1", 9447, ServerApi.new)
 
   connections = {}
 

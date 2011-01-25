@@ -177,11 +177,16 @@ describe Rubarb::IncomingHandler do
 
   it "should errback if ids do not match" do
     errback_msg = false
-    @errbacks = [Proc.new { |error| errback_msg = error.message }]
+    @parent = mock("parent")
+    @parent.should_receive(:call_errbacks) do |error|
+      error.message.should == "Handshake Failure"
+    end
+
+    @parent.should_receive(:connection_completed).with(self)
+
     @id = "00000001"
 
     connection_completed
     receive_message("00000004")
-    errback_msg.should == "Handshake Failure"
   end
 end

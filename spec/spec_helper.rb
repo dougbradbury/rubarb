@@ -5,20 +5,27 @@ require 'timeout'
 require 'eventmachine'
 
 def start_reactor
-  t = Thread.current
-  reactor = Thread.new do
-    EM.run do
-      t.wakeup
+  main_thread = Thread.current
+  em_thread = Thread.new do
+    EventMachine::run do
+      main_thread.wakeup
     end
   end
-  sleep(4)
-  reactor
+  while !(em_thread.alive? && em_thread.status != "sleep")
+    sleep(0.2)
+  end
+  return em_thread
 end
 
+
 def stop_reactor(reactor)
-  EM::schedule {EM.stop}
+  return unless EM::reactor_running?
+  EM.stop
   reactor.join
+rescue Exception => e
+
 end
+
 
 def wait_for
   Timeout::timeout(5) do
@@ -28,5 +35,12 @@ def wait_for
   end
   rescue Timeout::Error => e
 end
+
+
+Spec::Runner.configure do |config|
+  config.before(:all) { @reactor = start_reactor}
+  config.after(:all) {stop_reactor(@reactor)}
+end
+
 
 #$DEBUG = true

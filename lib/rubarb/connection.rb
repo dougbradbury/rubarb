@@ -13,8 +13,8 @@ module Rubarb
     attr_accessor :id
     attr_accessor :on_connection
     attr_accessor :api
-    attr_accessor :errbacks
     attr_accessor :insecure_methods
+    attr_accessor :parent
 
     def post_init
       @buffer = ""
@@ -24,6 +24,7 @@ module Rubarb
       Rubarb::FastMessageProtocol.install(self)
       send_data("5")
       send_data(@id)
+      @parent.connection_completed(self) if @parent
     end
 
     def receive_message message
@@ -36,17 +37,11 @@ module Rubarb
     end
 
     def unbind
-      call_errbacks(ConnectionError.new)
+      @parent.connection_closed(self)
     end
 
     def call_errbacks(message)
-      @errbacks.each do |e|
-        e.call(message)
-      end
-    end
-
-    def force_close_connection
-      close_connection_after_writing
+      @parent.call_errbacks(message)
     end
 
   end
@@ -58,10 +53,10 @@ module Rubarb
     attr_accessor :port
     attr_accessor :on_connection
     attr_accessor :api
-    attr_accessor :errbacks
     attr_accessor :callback
     attr_accessor :msg_id_generator
     attr_accessor :insecure_methods
+    attr_accessor :parent
 
     def post_init
       @buffer = ""
@@ -69,6 +64,7 @@ module Rubarb
 
     def connection_completed
       send_data("4")
+      @parent.connection_completed(self) if @parent
     end
 
     def receive_data data
@@ -79,26 +75,12 @@ module Rubarb
     end
 
     def unbind
-      if @incoming_connection
-        EM.next_tick do
-          @incoming_connection.force_close_connection
-        end
-      else
-        call_errbacks(ConnectionError.new)
-      end
+      @parent.connection_closed(self)
     end
 
     def call_errbacks(message)
-      @errbacks.each do |e|
-        e.call(message)
-      end
+      @parent.call_errbacks(message)
     end
-
-    def force_close_connection
-      @incoming_connection = nil
-      close_connection_after_writing
-    end
-
 
     private
 
@@ -110,17 +92,20 @@ module Rubarb
           incoming_connection.id = @id
           incoming_connection.on_connection = @on_connection
           incoming_connection.api = @api
-          incoming_connection.errbacks = @errbacks
           incoming_connection.insecure_methods = @insecure_methods
-          @incoming_connection = incoming_connection
+          incoming_connection.parent = @parent
         end
       end
     end
   end
 
   class Connection
-    attr_reader :remote_connection
+
     attr_reader :msg_id_generator
+
+    def remote_connection
+      @outgoing_connection
+    end
 
     def initialize(host, port, api, insecure_methods=Default::INSECURE_METHODS)
       @host = host
@@ -129,6 +114,32 @@ module Rubarb
       @msg_id_generator = Id.new
       @errbacks = []
       @insecure_methods = insecure_methods
+      @connections = []
+    end
+
+    def close_connections
+      EM.next_tick do
+        @connections.each {|conn| conn.close_connection_after_writing}
+      end
+    end
+
+    def connection_closed(connection)
+      @connections.delete(connection)
+      if !@connections.empty?
+        close_connections
+      else
+        call_errbacks(ConnectionError.new)
+      end
+    end
+
+    def connection_completed(connection)
+      @connections << connection
+    end
+
+    def call_errbacks(message)
+      @errbacks.each do |e|
+        e.call(message)
+      end
     end
 
     def errback & block
@@ -143,10 +154,10 @@ module Rubarb
             connection.port = @port
             connection.on_connection = block
             connection.api = @api
-            connection.errbacks = @errbacks
             connection.msg_id_generator = @msg_id_generator
             connection.insecure_methods = @insecure_methods
-            @remote_connection = connection
+            connection.parent = self
+            @outgoing_connection = connection
           end
         rescue Exception => e
           @errbacks.each do |errback|
@@ -159,18 +170,18 @@ module Rubarb
     def method_missing(method, * args, & block)
       EventMachine::schedule do
         begin
-          @remote_connection.remote_call(method, args, & block)
+          @outgoing_connection.remote_call(method, args, & block)
         rescue Exception => e
-          @remote_connection.call_errbacks(e)
+          call_errbacks(e)
         end
       end
     end
 
     def stop(& callback)
       EventMachine::schedule do
-        if @remote_connection
+        if @outgoing_connection
           EventMachine::next_tick do
-            @remote_connection.close_connection_after_writing
+            @outgoing_connection.close_connection_after_writing
             callback.call(true) if callback
           end
         else

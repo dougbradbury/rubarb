@@ -172,7 +172,6 @@ describe "Client to Server communication and response" do
   end
 
   it "should close one of the connections" do
-    pending
     @server_side_client_proxy = nil
     @client_side_closed = 0
     @server.start do |new_connection|

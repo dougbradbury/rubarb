@@ -102,9 +102,10 @@ describe Rubarb::Server do
     @connection = Rubarb::Connection.new("127.0.0.1", 9441, mock("client"))
     EM.schedule do
       @server.start { |client| @client = client }
-      @connection.start { connected = true }
+      EM.next_tick {@connection.start { connected = true } }
     end
     wait_for { connected }
+    connected.should == true
   end
 
   it "sets instance of Rubarb::Id to each connection for connection ids" do

@@ -57,6 +57,7 @@ module Rubarb
     attr_accessor :msg_id_generator
     attr_accessor :insecure_methods
     attr_accessor :parent
+    attr_accessor :keep_alive_time
 
     def post_init
       @buffer = ""
@@ -75,6 +76,7 @@ module Rubarb
     end
 
     def unbind
+      cancel_keep_alive
       @parent.connection_closed(self)
     end
 
@@ -107,7 +109,7 @@ module Rubarb
       @outgoing_connection
     end
 
-    def initialize(host, port, api, insecure_methods=Default::INSECURE_METHODS)
+    def initialize(host, port, api, insecure_methods=Default::INSECURE_METHODS, keep_alive_time = 0)
       @host = host
       @port = port
       @api = api
@@ -115,6 +117,7 @@ module Rubarb
       @errbacks = []
       @insecure_methods = insecure_methods
       @connections = []
+      @keep_alive_time = keep_alive_time
     end
 
     def close_connections
@@ -157,6 +160,7 @@ module Rubarb
             connection.msg_id_generator = @msg_id_generator
             connection.insecure_methods = @insecure_methods
             connection.parent = self
+            connection.keep_alive_time = @keep_alive_time
             @outgoing_connection = connection
           end
         rescue Exception => e

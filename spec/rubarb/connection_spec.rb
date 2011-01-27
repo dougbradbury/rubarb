@@ -140,6 +140,10 @@ describe Rubarb::OutgoingHandler do
     remote_call(:foo, "bary")
     @sent_msg.should == marshal_call("00000001", :foo, "bary")
   end
+
+  it "should receive empty message" do
+    proc {receive_data("")}.should_not raise_error
+  end
 end
 
 describe Rubarb::IncomingHandler do

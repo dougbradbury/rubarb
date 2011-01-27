@@ -9,10 +9,11 @@ module Rubarb
 
     def receive_message(message)
       id, method, args = unmarshal_call(message)
+      return unless method
       responder = Responder.new(self, id)
       begin
         raise Rubarb::InsecureMethodCallError.new(method) if @insecure_methods.include?(method)
-        api.send(method, *[responder, *args]);
+        api.send(method, *[responder, *args])
       rescue Exception => e
         reply("0", e)
       end
@@ -20,6 +21,10 @@ module Rubarb
 
     def reply(id, *args)
       send_message(marshal_call(args.unshift(id)))
+    end
+
+    def cancel_keep_alive
+
     end
   end
 end

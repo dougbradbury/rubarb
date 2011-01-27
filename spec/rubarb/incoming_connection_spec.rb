@@ -76,4 +76,10 @@ describe Rubarb::IncomingConnection do
     self.should_receive(:send_message).with(marshal_call(["00000002", "result"]))
     reply("00000002", "result")
   end
+
+  it "should handle empty message" do
+    self.should_not_receive(:send_message)
+    receive_message(marshal_call(""))
+  end
+
 end

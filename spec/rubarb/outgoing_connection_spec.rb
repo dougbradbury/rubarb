@@ -100,4 +100,8 @@ describe Rubarb::OutgoingConnection do
     @callback.should have(0).items
   end
 
+  it "should handle empty message" do
+    proc {receive_message(marshal_call(""))}.should_not raise_error
+  end
+
 end

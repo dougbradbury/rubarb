@@ -3,13 +3,46 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 require 'rubarb/server'
 require 'rubarb/connection'
 
-describe "Server to Client communication and response" do
-
-  class TestClientApi
-    def name(responder)
-      responder.reply("Doug")
-    end
+class TestClientApi
+  def name(responder)
+    responder.reply("Doug")
   end
+end
+
+
+describe "With Keep alives enables" do
+
+  before(:each) do
+    @server_api = mock("server")
+    @client_api = TestClientApi.new
+
+    @server = Rubarb::Server.new("127.0.0.1", 9441, @server_api, Rubarb::Default::INSECURE_METHODS, 0.1)
+    @connection = Rubarb::Connection.new("127.0.0.1", 9441, @client_api, Rubarb::Default::INSECURE_METHODS, 0.1)
+  end
+
+  after(:each) do
+    sync_stop(@server)
+  end
+
+  it "should communicate with the client" do
+    @callback_called = false
+
+    @server.start do |new_client|
+      new_client.name do|result|
+        result.should == "Doug"
+        @callback_called = true
+      end
+    end
+
+    @connection.start
+
+    wait_for {@callback_called}
+
+  end
+
+end
+
+describe "Server to Client communication and response" do
 
   before(:each) do
     @server_api = mock("server")

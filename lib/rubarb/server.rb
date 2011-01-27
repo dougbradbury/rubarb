@@ -47,7 +47,7 @@ module Rubarb
     attr_reader :insecure_methods
     attr_accessor :external_protocol
 
-    def initialize(host, port, api, insecure_methods=Default::INSECURE_METHODS)
+    def initialize(host, port, api, insecure_methods=Default::INSECURE_METHODS, keep_alive_time = 0)
       @host = host
       @port = port
       @api = api
@@ -58,6 +58,7 @@ module Rubarb
       @conn_id_generator = Id.new
       @msg_id_generator = Id.new
       @insecure_methods = insecure_methods
+      @keep_alive_time = keep_alive_time
     end
 
     def start(& callback)
@@ -72,6 +73,7 @@ module Rubarb
             connection.unbindback = @unbind_block
             connection.insecure_methods = @insecure_methods
             connection.external_protocol = @external_protocol
+            connection.keep_alive_time = @keep_alive_time
             @connections << connection
           end
         rescue Exception => e
@@ -126,6 +128,7 @@ module Rubarb
     attr_accessor :unbindback
     attr_accessor :insecure_methods
     attr_accessor :external_protocol
+    attr_accessor :keep_alive_time
 
     include ConnectionId
 
@@ -139,6 +142,7 @@ module Rubarb
     end
 
     def unbind
+      cancel_keep_alive
       call_errbacks(ConnectionError.new)
       @unbindback.call(self) if @unbindback
     end

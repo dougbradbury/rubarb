@@ -30,11 +30,12 @@ module Rubarb
 
     def reset_keep_alive
       cancel_keep_alive
+      return if @keep_alive_time.to_i == 0
+
       @keep_alive_timer = EventMachine::add_timer(@keep_alive_time) do
         send_message(marshal_call(""))
-        puts "keep alive"
         reset_keep_alive
-      end unless @keep_alive_time == 0 || @keep_alive_time.nil?
+      end
     end
 
   end

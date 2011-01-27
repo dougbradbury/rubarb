@@ -120,6 +120,14 @@ module Rubarb
       @keep_alive_time = keep_alive_time
     end
 
+    def keep_alive_time=(keep_alive_time_seconds)
+      @keep_alive_time = keep_alive_time_seconds
+      if @outgoing_connection
+        @outgoing_connection.keep_alive_time = @keep_alive_time
+        @outgoing_connection.reset_keep_alive
+      end
+    end
+
     def close_connections
       EM.next_tick do
         @connections.each {|conn| conn.close_connection_after_writing}

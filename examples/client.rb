@@ -12,7 +12,7 @@ class ClientApi
 end
 
 EM::run do
-  connection = Rubarb::Connection.new("127.0.0.1", 9447, ClientApi.new(ARGV[0]), Rubarb::Default::INSECURE_METHODS, 2)
+  connection = Rubarb::Connection.new("127.0.0.1", 9447, ClientApi.new(ARGV[0]))
   connection.errback do |error|
     puts ("Connection Error:  #{error}")
   end
@@ -21,6 +21,8 @@ EM::run do
     connection.time do |response|
       puts "Server Said it is:  #{response.strftime("%D")}"
     end
+
+    connection.keep_alive_time=2
 
     EventMachine.add_timer(20) do
       puts "stopping"

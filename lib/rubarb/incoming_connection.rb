@@ -23,6 +23,9 @@ module Rubarb
       send_message(marshal_call(args.unshift(id)))
     end
 
+	def reset_keep_alive
+	end
+
     def cancel_keep_alive
 
     end

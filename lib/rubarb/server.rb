@@ -61,6 +61,15 @@ module Rubarb
       @keep_alive_time = keep_alive_time
     end
 
+    def keep_alive_time=(keep_alive_seconds)
+      EventMachine::schedule do
+        @connections.each do |c|
+          c.keep_alive_time = @keep_alive_time = keep_alive_seconds;
+          c.reset_keep_alive
+        end
+      end
+    end
+
     def start(& callback)
       EventMachine::schedule do
         begin

@@ -150,6 +150,10 @@ module Rubarb
       handshake(@buffer) if @conn_id.nil?
     end
 
+    def cancel_keep_alive
+      #will be replaced by later included modules
+    end
+
     def unbind
       cancel_keep_alive
       call_errbacks(ConnectionError.new)

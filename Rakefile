@@ -17,7 +17,7 @@ calls in the published object.  Responses are return by calling the "reply metho
     gem.homepage = "http://github.com/dougbradbury/rubarb"
     gem.authors = ["doug bradbury"]
     gem.add_development_dependency "rspec", ">= 1.3.0"
-    gem.add_dependency "eventmachine", ">= 0.12.11"
+    gem.add_dependency "eventmachine", ">= 1.0.0.beta.2"
 	gem.files = Dir['lib/**/*.rb']
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end

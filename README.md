@@ -77,3 +77,8 @@ but the Eventmachine reactor must be started somewhere in your application
       end
 
     end
+
+## Building
+	gem install jeweller
+	rake build
+	

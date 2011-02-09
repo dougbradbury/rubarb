@@ -64,7 +64,7 @@ module Rubarb
     def keep_alive_time=(keep_alive_seconds)
       EventMachine::schedule do
         @connections.each do |c|
-          c.keep_alive_time = @keep_alive_time = keep_alive_seconds;
+          c.keep_alive_time = @keep_alive_time = keep_alive_seconds
           c.reset_keep_alive
         end
       end

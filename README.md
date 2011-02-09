@@ -12,6 +12,10 @@ the published object.  Responses are return by calling the "reply" method on the
 Server and Connection object may be created and started outside of EM::run,
 but the Eventmachine reactor must be started somewhere in your application
 
+## Compilation
+
+    rake build
+
 ## Installation
 
     gem install rubarb

@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
 require 'rubarb/remote_call'
 describe Rubarb::RemoteCall do
@@ -33,7 +33,7 @@ describe Rubarb::RemoteCall do
       return true
     end
   end
-  
+
   it "should handle complexy objects" do
     identity_test(:make_grapes, Wine.new(15, 0.15), "grapes")
   end

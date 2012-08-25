@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
 require 'rubarb/server'
 require 'rubarb/connection'
@@ -126,7 +126,7 @@ describe "Client to Server communication and response" do
 
     wait_for {@server_api.hi_called}
   end
-  
+
   it "without parameters" do
     @callback_called = false
     @server.start
@@ -199,7 +199,7 @@ describe "Client to Server communication and response" do
 
     wait_for {@client_side_closed}
     @client_side_closed.should == true
-    
+
   end
 
   it "should close one of the connections" do
@@ -211,7 +211,7 @@ describe "Client to Server communication and response" do
 
     @connection.errback do
       @client_side_closed += 1
-    end    
+    end
     @connection.start
 
     wait_for {!@server_side_client_proxy.nil?}

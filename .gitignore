@@ -5,3 +5,5 @@ pkg
 *.iml
 .rakeTasks
 *.gemspec
+coverage
+rdoc

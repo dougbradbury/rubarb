@@ -1,5 +1,7 @@
+require 'simplecov'
+
+SimpleCov.start
 require 'rubygems'
-require 'spec'
 require 'timeout'
 
 require 'eventmachine'
@@ -44,7 +46,7 @@ def sync_stop(server)
 end
 
 
-Spec::Runner.configure do |config|
+RSpec.configure do |config|
   config.before(:suite) {$reactor_thread = start_reactor}
   config.after(:suite) {stop_reactor($reactor_thread)}
 end

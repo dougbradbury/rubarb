@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 require "rubarb/responder"
 require "rubarb/incoming_connection"
 require "rubarb/server"

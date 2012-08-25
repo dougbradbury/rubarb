@@ -3,7 +3,7 @@ require 'rubarb/connection'
 require 'rubarb/insecure_method_call_error'
 require 'socket'
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
 describe "Server Failures" do
 
@@ -41,23 +41,18 @@ describe "Server Failures" do
   end
 
 
-  def check_messages(size, actual, expected)
-    actual.should have(size).items
-    (0...size).each { |i| actual[i].include?(expected[i]).should be_true }
-  end
-
   def run_server_failure(blocks)
-    server_block = blocks[:server]
-    client_block = blocks[:client]
+    server_block   = blocks[:server]
+    client_block   = blocks[:client]
     server_errback = blocks[:server_errback]
     client_errback = blocks[:client_errback]
-    connected = false
-    errbacked = false
+    connected      = false
+    errbacked      = false
     EM.schedule do
-      @server.errback { |e| server_errback.call(e) if server_errback; errbacked = true }
-      @server.start { |connection| server_block.call(connection) if server_block }
-      @connection1.errback { |e| client_errback.call(e) if client_errback; errbacked = true }
-      @connection1.start { client_block.call(@connection1) if client_block; connected = true }
+      @server.errback      { |e|          server_errback.call(e)          if server_errback; errbacked = true }
+      @server.start        { |connection| server_block.call(connection)   if server_block                     }
+      @connection1.errback { |e|          client_errback.call(e)          if client_errback; errbacked = true }
+      @connection1.start   {              client_block.call(@connection1) if client_block;   connected = true }
     end
     wait_for { connected }
     wait_for { errbacked }
@@ -69,7 +64,7 @@ describe "Server Failures" do
     client_errback_block = Proc.new { |e| err_messages << e.message }
     client_block = Proc.new { |connection| connection.not_a_method }
     run_server_failure({:client => client_block, :client_errback => client_errback_block})
-    check_messages(1, err_messages, expected_messages)
+    err_messages.should =~ expected_messages
   end
 
   it "handles no method call on client side" do
@@ -78,7 +73,7 @@ describe "Server Failures" do
     server_errback_block = Proc.new { |e| err_messages << e.message }
     server_block = Proc.new { |connection| connection.not_a_method }
     run_server_failure({:server => server_block, :server_errback => server_errback_block})
-    check_messages(1, err_messages, expected_messages)
+    err_messages =~ expected_messages
   end
 
   it "handles insecure method call on server side" do
@@ -94,7 +89,7 @@ describe "Server Failures" do
 
     client_errback_block = Proc.new { |e| err_messages << e.message }
     run_server_failure({:server => client_block, :server_errback => client_errback_block})
-    check_messages(1, err_messages, expected_messages)
+    err_messages =~ expected_messages
   end
 
   it "handles insecure method call on client side" do
@@ -110,7 +105,7 @@ describe "Server Failures" do
 
     server_errback_block = Proc.new { |e| err_messages << e.message }
     run_server_failure({:server => server_block, :server_errback => server_errback_block})
-    check_messages(1, err_messages, expected_messages)
+    err_messages =~ expected_messages
   end
 
   it "executes all errback blocks when exception is thrown on client side" do

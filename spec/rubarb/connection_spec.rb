@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
 require 'rubarb/server'
 require "rubarb/connection"
@@ -25,7 +25,7 @@ describe Rubarb::Connection do
   end
 
   describe "with client and server connected" do
-    
+
     def connect(connection)
       connected = false
       connection.start do
@@ -34,11 +34,13 @@ describe Rubarb::Connection do
       wait_for { connected }
       return connection
     end
-    
+
     before(:all) do
-      @server = Rubarb::Server.new("127.0.0.1", 9441, mock("server"))
+      mock_server = Object.new
+      mock_client = Object.new
+      @server = Rubarb::Server.new("127.0.0.1", 9441, mock_server)
       @server.start
-      @connection = connect(Rubarb::Connection.new("127.0.0.1", 9441, mock("client")))
+      @connection = connect(Rubarb::Connection.new("127.0.0.1", 9441, mock_client))
     end
 
     after(:each) do
@@ -78,10 +80,10 @@ describe Rubarb::Connection do
       error = nil
       connection.errback {|e| error = e}
       connection.remote_connection.should_receive(:remote_call).and_raise("Blah")
-      
+
       connection.foo
       wait_for{error != nil}
-      
+
       error.to_s.should == "Blah"
       EM.reactor_running?.should == true
     end
@@ -97,7 +99,7 @@ describe Rubarb::Connection do
       connection.start
 
       wait_for{errback_called}
-      
+
     end
 
   end

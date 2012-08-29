@@ -2,11 +2,13 @@ GEM
   remote: http://rubygems.org/
   specs:
     eventmachine (1.0.0.rc.4)
+    eventmachine (1.0.0.rc.4-java)
     rspec (1.3.0)
 
 PLATFORMS
+  java
   ruby
 
 DEPENDENCIES
-  eventmachine (= 1.0.0.rc4)
+  eventmachine (= 1.0.0.rc.4)
   rspec (= 1.3)

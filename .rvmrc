@@ -1,1 +1,1 @@
-rvm gemset use 'rubarb' --create
+rvm use jruby-1.6.4@rubarb --create

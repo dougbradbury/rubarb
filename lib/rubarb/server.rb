@@ -9,7 +9,7 @@ require 'rubarb/default'
 module Rubarb
   class ClientProxy
     attr_reader :remote_connection
-    
+
     def initialize(outgoing_connection)
       @remote_connection = outgoing_connection
     end
@@ -53,7 +53,10 @@ module Rubarb
       @api = api
       @connections = []
       @unbind_block = Proc.new do |connection|
+        connection_id = connection.conn_id
         @connections.delete(connection)
+        partner = @connections.find {|conn| conn.conn_id == connection_id}
+        EventMachine::next_tick { partner.close_connection } if partner
       end
       @conn_id_generator = Id.new
       @msg_id_generator = Id.new

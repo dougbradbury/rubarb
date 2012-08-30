@@ -176,14 +176,16 @@ describe "Server Failures" do
     @server.connections.should have(0).items
   end
 
-  it "removes one unbinded connection from connections ivar of size two" do
+  it "remmoves and unbinds partner connections" do
     connected = false
     @server.start
     @connection1.start
     @connection2.start { connected = true }
     wait_for { connected }
+    @server.connections.should have(4).items
     2.times { @server.connections.first.unbind }
-    @server.connections.should have(2).items
+    wait_for { @server.connections.empty? }
+    @server.connections.should have(0).items
   end
 
   it "does not error out after calling stop twice consecutively" do

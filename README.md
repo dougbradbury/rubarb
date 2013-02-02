@@ -15,75 +15,85 @@ but the Eventmachine reactor must be started somewhere in your application
 
 ## Compilation
 
-    rake build
+```shell
+$ rake build
+```
 
 ## Installation
 
-    gem install rubarb
+```shell
+$ gem install rubarb
+```
 
 ## Server Example
 
-    class ServerApi
-      def time(responder)
-        puts "Server received time request"
-        responder.reply(Time.now)
-      end
-    end
+```ruby
+class ServerApi
+  def time(responder)
+    puts "Server received time request"
+    responder.reply(Time.now)
+  end
+end
 
-    EM.run do
-      server = Rubarb::Server.new("127.0.0.1", 9441, ServerApi.new)
+EM.run do
+  server = Rubarb::Server.new("127.0.0.1", 9441, ServerApi.new)
 
-      connections = {}
+  connections = {}
 
-      server.start do |client|
-        puts "Connection Made:  #{client}"
-        client.name do |name|
-          connections[name] = client
-          client.errback do
-            puts "Connection Lost:  #{name}"
-            connections.delete(name)
-          end
-
-        end
-
+  server.start do |client|
+    puts "Connection Made:  #{client}"
+    client.name do |name|
+      connections[name] = client
+      client.errback do
+        puts "Connection Lost:  #{name}"
+        connections.delete(name)
       end
 
-      EventMachine.add_periodic_timer(1) { puts "Connections:  #{connections.keys.inspect}" }
-
     end
+
+  end
+
+  EventMachine.add_periodic_timer(1) { puts "Connections:  #{connections.keys.inspect}" }
+
+end
+```
 
 ## Client Example
 
-    class ClientApi
-      def initialize(name)
-        @name = name
-      end
-      def name(responder)
-        responder.reply(@name)
-      end
+```ruby
+class ClientApi
+  def initialize(name)
+    @name = name
+  end
+  def name(responder)
+    responder.reply(@name)
+  end
+end
+
+EM::run do
+  connection = Rubarb::Connection.new("127.0.0.1", 9441, ClientApi.new(ARGV[0]))
+  connection.errback do |error|
+    puts ("Connection Error:  #{error}")
+  end
+
+  connection.start do
+    connection.time do |response|
+      puts "Server Said it is:  #{response.strftime("%D")}"
     end
 
-    EM::run do
-      connection = Rubarb::Connection.new("127.0.0.1", 9441, ClientApi.new(ARGV[0]))
-      connection.errback do |error|
-        puts ("Connection Error:  #{error}")
-      end
-
-      connection.start do
-        connection.time do |response|
-          puts "Server Said it is:  #{response.strftime("%D")}"
-        end
-
-        EventMachine.add_timer(20) do
-          puts "stopping"
-          connection.stop
-          EM::stop
-        end
-      end
-
+    EventMachine.add_timer(20) do
+      puts "stopping"
+      connection.stop
+      EM::stop
     end
+  end
 
-## Building
-	gem install jeweller
-	rake build
+end
+```
 	
+## Building
+
+```shell
+$ gem install jeweller
+$ rake build
+```
